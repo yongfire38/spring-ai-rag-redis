@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 로컬 ONNX 모델을 사용하는 임베딩 모델 빈 구성 클래스스
+ * 로컬 ONNX 모델을 사용하는 임베딩 모델 빈 구성 클래스
  */
 @Slf4j
 @Configuration
