@@ -5,7 +5,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.stereotype.Service;
 
 import com.example.chat.service.ChatService;
@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ChatServiceImpl implements ChatService {
 
     private final OllamaChatModel ollamaChatModel;
-    private final VectorStore vectorStore;
+    private final RedisVectorStore redisVectorStore;
 
     /**
      * RAG 기반 응답 생성
@@ -41,7 +41,7 @@ public class ChatServiceImpl implements ChatService {
                     .similarityThreshold(0.6f)
                     .build();
 
-            var searchResults = vectorStore.similaritySearch(searchRequest);
+            var searchResults = redisVectorStore.similaritySearch(searchRequest);
 
             // 검색된 문서 로그 출력 (디버깅용)
             log.info("검색된 문서 개수: {}", searchResults.size());

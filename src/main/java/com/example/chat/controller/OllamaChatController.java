@@ -69,7 +69,7 @@ public class OllamaChatController {
     }
 
     /**
-     * 문서 로드 수동 트리거 : 문서를 전부 삭제하고, 마크다운 파일을 전부 새로 읽어서 임베딩 후 저장
+     * 문서 로드 수동 트리거 : 마크다운 파일을 전부 새로 읽어서 임베딩 후 저장
      */
     @PostMapping("/api/documents/load")
     public Map<String, Object> loadDocuments() {

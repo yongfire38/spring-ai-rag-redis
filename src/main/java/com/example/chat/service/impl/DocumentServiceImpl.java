@@ -8,15 +8,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.chat.service.DocumentService;
@@ -29,50 +27,25 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DocumentServiceImpl implements DocumentService {
 
-    private final VectorStore vectorStore;
+    // Spring AI 자동 설정을 통해 주입되는 RedisVectorStore 사용
+    private final RedisVectorStore redisVectorStore;
 
     @Value("${spring.ai.document.path}")
     private String documentPath;
 
-    // Redis 키 패턴 (application.properties의 prefix 설정과 동일해야 함)
-    private static final String REDIS_KEY_PREFIX = "embedding:";
-
-    private final RedisTemplate<String, Object> redisTemplate;
-
     @Override
     public int loadDocuments() {
 
-        // step 1. 기존 Redis 데이터 삭제
-        // 해당 메서드는 애플리케이션 기동 시마다 호출되므로 중복 업로드 방지
-        try {
-            log.info("Redis 벡터 저장소 데이터 삭제 시도");
-
-            // Redis에서 embedding: 프리픽스를 가진 모든 키 가져오기
-            Set<String> keys = redisTemplate.keys(REDIS_KEY_PREFIX + "*");
-
-            if (keys != null && !keys.isEmpty()) {
-                log.info("{}개의 기존 데이터 항목 발견", keys.size());
-                redisTemplate.delete(keys);
-                log.info("기존 데이터 삭제 완료");
-            } else {
-                log.info("삭제할 기존 데이터 없음");
-            }
-        } catch (Exception e) {
-            log.warn("Redis 데이터 삭제 중 오류: {}", e.getMessage());
-            log.debug("오류 상세 정보", e);
-        }
-
-        // step 2. 문서 로드
+        // step 1. 문서 로드
         List<Document> documents = loadMarkdownDocuments();
         int processedCount = 0;
 
         log.info("총 {}개의 문서를 처리합니다.", documents.size());
 
-        // step 3. 문서 임베딩 및 벡터 저장소에 추가
+        // step 2. 문서 임베딩 및 벡터 저장소에 추가
         for (Document doc : documents) {
             try {
-                // 새 문서 추가 (기존 데이터는 이미 삭제한 상태태)
-                vectorStore.add(List.of(doc));
+                redisVectorStore.add(List.of(doc));
                 processedCount++;
                 String source = (String) doc.getMetadata().get("source");
                 log.info("문서 처리 완료: {}", (source != null ? source : "unknown"));
@@ -84,7 +57,6 @@ public class DocumentServiceImpl implements DocumentService {
 
         log.info("총 {}개 문서 중 {}개 처리 완료", documents.size(), processedCount);
         return processedCount;
-
     }
 
     /**
@@ -110,7 +82,16 @@ public class DocumentServiceImpl implements DocumentService {
                     metadata.put("source", filename);
                     metadata.put("type", "markdown");
 
-                    Document doc = new Document(content, metadata);
+                    // 고정 ID 생성 - 파일명을 기반으로 하여 동일 파일은 항상 동일 ID 가짐
+                    // 이를 통해 애플리케이션 재시작 시 동일 파일이 다시 추가되어도 덮어쓰기가 됨
+
+                    // 한글을 보존하면서 유효한 ID 생성
+                    // 파일명에서 Redis 키로 사용할 수 없는 특수 문자만 제거
+                    String docId = "doc-" + filename
+                            .replaceAll("[\\/:*?\"<>|]", "") // Redis 키로 사용할 수 없는 특수 문자 제거
+                            .replaceAll("\\s+", "-"); // 공백을 하이픈으로 변경
+
+                    Document doc = new Document(docId, content, metadata);
                     documents.add(doc);
                     log.info("문서 로드 완료: {}, 크기: {}바이트", filename, content.length());
                 } catch (IOException e) {
