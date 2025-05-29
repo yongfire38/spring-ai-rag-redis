@@ -58,6 +58,16 @@ public class OllamaChatController {
     }
 
     /**
+     * RAG 기반 스트리밍 응답 생성
+     */
+    @GetMapping("/ai/rag/stream")
+    public Flux<ChatResponse> streamRagResponse(
+            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message) {
+        log.info("RAG 기반 스트리밍 질의 수신: {}", message);
+        return chatService.streamRagResponse(message);
+    }
+
+    /**
      * 일반 응답 생성 (ChatService 사용)
      */
     @GetMapping("/ai/simple")
@@ -66,6 +76,16 @@ public class OllamaChatController {
         log.info("일반 질의 수신: {}", message);
         String response = chatService.generateSimpleResponse(message);
         return Map.of("generation", response);
+    }
+
+    /**
+     * 일반 스트리밍 응답 생성 (ChatService 사용)
+     */
+    @GetMapping("/ai/simple/stream")
+    public Flux<ChatResponse> streamSimpleResponse(
+            @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
+        log.info("일반 스트리밍 질의 수신: {}", message);
+        return chatService.streamSimpleResponse(message);
     }
 
     /**
