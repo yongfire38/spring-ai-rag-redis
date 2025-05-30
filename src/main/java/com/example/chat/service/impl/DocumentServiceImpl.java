@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.document.Document;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -30,33 +31,71 @@ public class DocumentServiceImpl implements DocumentService {
     // Spring AI 자동 설정을 통해 주입되는 RedisVectorStore 사용
     private final RedisVectorStore redisVectorStore;
 
+    private final TextSplitter textSplitter;
+
     @Value("${spring.ai.document.path}")
     private String documentPath;
 
     @Override
     public int loadDocuments() {
 
+        // step 0. 기존 벡터 데이터는 덮어쓰기로 처리.
+        // RedisVectorStore의 모든 데이터를 삭제하는 것은 어려움
+        log.info("기존 벡터 데이터는 덮어쓰기로 처리합니다.");
+
         // step 1. 문서 로드
         List<Document> documents = loadMarkdownDocuments();
-        int processedCount = 0;
 
         log.info("총 {}개의 문서를 처리합니다.", documents.size());
 
-        // step 2. 문서 임베딩 및 벡터 저장소에 추가
-        for (Document doc : documents) {
-            try {
-                redisVectorStore.add(List.of(doc));
-                processedCount++;
-                String source = (String) doc.getMetadata().get("source");
-                log.info("문서 처리 완료: {}", (source != null ? source : "unknown"));
-            } catch (Exception e) {
-                String errorSource = (String) doc.getMetadata().get("source");
-                log.error("문서 처리 중 오류 발생: {}", (errorSource != null ? errorSource : "unknown"), e);
+        // step 2. 문서 분할
+        List<Document> splitDocuments = textSplitter.split(documents);
+        log.info("{}개의 원본 문서를 {}개의 청크로 분할했습니다.", documents.size(), splitDocuments.size());
+
+        List<Document> processedDocuments = new ArrayList<>();
+        Map<String, Integer> chunkCountByOriginal = new HashMap<>();
+
+        // step 3. 문서 임베딩 및 벡터 저장소에 추가
+        for (Document chunk : splitDocuments) {
+
+            // 파일명 기반으로 안정적인 ID 생성
+            String source = (String) chunk.getMetadata().get("source");
+            String stableId = "";
+
+            if (source != null && !source.isEmpty()) {
+                // 파일명에서 확장자를 제거하고 특수문자 대체
+                stableId = source.replaceAll("\\.md$", "").replaceAll("[^a-zA-Z0-9가-힣]", "_");
+            } else {
+                // source가 없는 경우 임의의 고정 ID 사용
+                stableId = "unknown_document";
             }
+
+            // 해당 원본 문서의 청크 카운트 증가
+            int chunkIndex = chunkCountByOriginal.getOrDefault(stableId, 0) + 1;
+            chunkCountByOriginal.put(stableId, chunkIndex);
+
+            // 새 ID 생성 (원본 문서 ID + 청크 번호)
+            String newId = stableId + "_" + chunkIndex;
+
+            // 메타데이터 복사 및 추가 정보 설정
+            Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+            metadata.put("original_document_id", stableId);
+            metadata.put("chunk_index", chunkIndex);
+
+            // 새 문서 생성
+            // 분할된 문서에 고유 ID 부여 (원본 문서 ID + 청크 번호)
+            Document newChunk = new Document(newId, chunk.getText(), metadata);
+            processedDocuments.add(newChunk);
         }
 
-        log.info("총 {}개 문서 중 {}개 처리 완료", documents.size(), processedCount);
-        return processedCount;
+        try {
+            redisVectorStore.add(processedDocuments);
+            log.info("총 {}개 청크 처리 완료", processedDocuments.size());
+            return processedDocuments.size();
+        } catch (Exception e) {
+            log.error("문서 처리 중 오류 발생", e);
+            return 0;
+        }
     }
 
     /**
