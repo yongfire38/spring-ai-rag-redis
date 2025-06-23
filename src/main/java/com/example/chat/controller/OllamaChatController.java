@@ -7,12 +7,10 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chat.service.ChatService;
-import com.example.chat.service.DocumentService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +23,6 @@ public class OllamaChatController {
 
     private final OllamaChatModel chatModel;
     private final ChatService chatService;
-    private final DocumentService documentService;
 
     /**
      * 일반 응답 생성 (테스트용)
@@ -47,17 +44,6 @@ public class OllamaChatController {
     }
 
     /**
-     * RAG 기반 응답 생성
-     */
-    @GetMapping("/ai/rag")
-    public Map<String, String> generateRagResponse(
-            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message) {
-        log.info("RAG 기반 질의 수신: {}", message);
-        String response = chatService.generateRagResponse(message);
-        return Map.of("generation", response);
-    }
-
-    /**
      * RAG 기반 스트리밍 응답 생성
      */
     @GetMapping("/ai/rag/stream")
@@ -68,17 +54,6 @@ public class OllamaChatController {
     }
 
     /**
-     * 일반 응답 생성 (ChatService 사용)
-     */
-    @GetMapping("/ai/simple")
-    public Map<String, String> generateSimpleResponse(
-            @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
-        log.info("일반 질의 수신: {}", message);
-        String response = chatService.generateSimpleResponse(message);
-        return Map.of("generation", response);
-    }
-
-    /**
      * 일반 스트리밍 응답 생성 (ChatService 사용)
      */
     @GetMapping("/ai/simple/stream")
@@ -86,16 +61,6 @@ public class OllamaChatController {
             @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         log.info("일반 스트리밍 질의 수신: {}", message);
         return chatService.streamSimpleResponse(message);
-    }
-
-    /**
-     * 문서 로드 수동 트리거 : 마크다운 파일을 전부 새로 읽어서 임베딩 후 저장
-     */
-    @PostMapping("/api/documents/load")
-    public Map<String, Object> loadDocuments() {
-        log.info("문서 로드 요청 수신");
-        int count = documentService.loadDocuments();
-        return Map.of("success", true, "count", count);
     }
 
 }

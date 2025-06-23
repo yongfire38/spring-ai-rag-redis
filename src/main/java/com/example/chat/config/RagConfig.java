@@ -7,11 +7,9 @@ import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
-import org.springframework.boot.CommandLineRunner;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.example.chat.service.DocumentService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,20 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RagConfig {
 
-    private final DocumentService documentService;
     private final RedisVectorStore redisVectorStore;
-
-    /**
-     * 애플리케이션 시작 시 문서 로드 및 임베딩 저장
-     */
-    @Bean
-    public CommandLineRunner loadDocuments() {
-        return args -> {
-            log.info("RAG 시스템 초기화 시작");
-            int count = documentService.loadDocuments();
-            log.info("RAG 시스템 초기화 완료 - {} 문서 처리됨", count);
-        };
-    }
 
     /**
      * RAG Advisor 설정

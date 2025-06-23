@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spring AI RAG 채팅</title>
-    <!-- 마크다운 변환을 위한 marked.js 라이브러리 -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
-<script src="/js/marked.min.js"></script>
+    <script src="/js/marked.min.js"></script>
     <style>
         body {
             font-family: 'Noto Sans KR', Arial, sans-serif;
@@ -96,6 +94,10 @@
         .send-button:hover {
             background-color: #45a049;
         }
+        .send-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         .loading {
             text-align: center;
             margin: 10px 0;
@@ -120,6 +122,52 @@
         .admin-button:hover {
             background-color: #0b7dda;
         }
+        .admin-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .document-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .document-status.processing {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .document-status.completed {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .document-status.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .progress-container {
+            margin-top: 10px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -142,13 +190,23 @@
         
         <div class="admin-panel">
             <h3>관리자 기능</h3>
-            <button class="admin-button" onclick="loadDocuments()">문서 로드</button>
-            <span id="admin-status"></span>
+            <button class="admin-button" id="reindex-btn" onclick="reindexDocuments()">문서 재인덱싱</button>
+            
+            <div class="document-status" id="document-status">
+                <div id="status-text">문서 처리 상태</div>
+                <div class="progress-container" id="progress-container" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">0 / 0</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         let currentMode = 'rag'; // 'rag' 또는 'simple'
+        let statusCheckInterval = null;
         
         function switchTab(mode) {
             currentMode = mode;
@@ -205,7 +263,7 @@
             const eventSource = new EventSource(`${endpoint}?message=${encodeURIComponent(message)}`);
             let fullResponse = '';
             
-            // 메시지 수신 시 처리
+            // 메시지 수신 시 처리 
             eventSource.onmessage = function(event) {
                 try {
                     const data = JSON.parse(event.data);
@@ -250,25 +308,120 @@
             });
         }
         
-        function loadDocuments() {
-            const statusElement = document.getElementById('admin-status');
-            statusElement.textContent = '문서 로드 중...';
-            
-            fetch('/api/documents/load', {
-                method: 'POST'
-            })
+        function reindexDocuments() {
+    const reindexBtn = document.getElementById('reindex-btn');
+    const statusDiv = document.getElementById('document-status');
+    const statusText = document.getElementById('status-text');
+    const progressContainer = document.getElementById('progress-container');
+    
+    // 버튼 비활성화
+    reindexBtn.disabled = true;
+    reindexBtn.textContent = '처리 중...';
+    
+    // 상태 표시 초기화
+    statusDiv.className = 'document-status processing';
+    statusDiv.style.display = 'block';
+    statusText.textContent = '문서 재인덱싱을 시작합니다...';
+    progressContainer.style.display = 'none';
+    
+    // 기존 상태 체크 인터벌 정리
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+    
+    // 비동기 재인덱싱 요청
+    fetch('/api/documents/reindex', {
+        method: 'POST'
+    })
+    .then(response => {
+        if (response.ok) {
+            // 상태 체크 시작
+            startStatusCheck();
+        } else {
+            throw new Error('재인덱싱 요청 실패');
+        }
+    })
+    .catch(error => {
+        console.error('재인덱싱 오류:', error);
+        statusDiv.className = 'document-status error';
+        statusText.textContent = '재인덱싱 요청 중 오류가 발생했습니다.';
+        reindexBtn.disabled = false;
+        reindexBtn.textContent = '문서 재인덱싱';
+    });
+}
+        
+function startStatusCheck() {
+    statusCheckInterval = setInterval(() => {
+        fetch('/api/documents/status')
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    statusElement.textContent = `성공: ${data.count}개 문서가 로드되었습니다.`;
+                const statusDiv = document.getElementById('document-status');
+                const statusText = document.getElementById('status-text');
+                const progressContainer = document.getElementById('progress-container');
+                const progressFill = document.getElementById('progress-fill');
+                const progressText = document.getElementById('progress-text');
+                const reindexBtn = document.getElementById('reindex-btn');
+                
+                if (data.processing) {
+                    // 처리 중인 경우
+                    statusDiv.className = 'document-status processing';
+                    statusText.textContent = '문서를 처리하고 있습니다...';
+                    progressContainer.style.display = 'block';
+                    
+                    // 진행률 계산 및 표시
+                    const percentage = data.totalCount > 0 ? (data.processedCount / data.totalCount) * 100 : 0;
+                    progressFill.style.width = percentage + '%';
+                    progressText.textContent = `${data.processedCount} / ${data.totalCount}`;
                 } else {
-                    statusElement.textContent = '문서 로드 실패';
+                    // 처리 완료된 경우
+                    clearInterval(statusCheckInterval);
+                    statusCheckInterval = null;
+                    
+                    statusDiv.className = 'document-status completed';
+                    statusText.textContent = `재인덱싱 완료: ${data.processedCount}개 청크 처리됨`;
+                    progressContainer.style.display = 'none';
+                    
+                    reindexBtn.disabled = false;
+                    reindexBtn.textContent = '문서 재인덱싱';
+                    
+                    // 5초 후 상태 숨김
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 5000);
                 }
             })
             .catch(error => {
-                statusElement.textContent = '오류: ' + error.message;
+                console.error('상태 확인 오류:', error);
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+                
+                const statusDiv = document.getElementById('document-status');
+                const statusText = document.getElementById('status-text');
+                const reindexBtn = document.getElementById('reindex-btn');
+                
+                statusDiv.className = 'document-status error';
+                statusText.textContent = '상태 확인 중 오류가 발생했습니다.';
+                reindexBtn.disabled = false;
+                reindexBtn.textContent = '문서 재인덱싱';
             });
-        }
+    }, 1000); // 1초마다 상태 확인
+}
+        
+        // 페이지 로드 시 초기 상태 확인
+        document.addEventListener('DOMContentLoaded', function() {
+            // 초기 상태 확인
+            fetch('/api/documents/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.processing) {
+                        // 이미 처리 중인 경우 상태 체크 시작
+                        startStatusCheck();
+                    }
+                })
+                .catch(error => {
+                    console.error('초기 상태 확인 오류:', error);
+                });
+        });
     </script>
 </body>
 </html>

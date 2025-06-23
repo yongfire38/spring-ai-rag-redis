@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.springframework.ai.document.Document;
@@ -31,65 +36,104 @@ public class DocumentServiceImpl implements DocumentService {
     // Spring AI 자동 설정을 통해 주입되는 RedisVectorStore 사용
     private final RedisVectorStore redisVectorStore;
 
+    private static final int BATCH_SIZE = 100;
+
     private final TextSplitter textSplitter;
+
+    // 비동기 처리를 위한 Executor 주입
+    private final Executor executor;
 
     @Value("${spring.ai.document.path}")
     private String documentPath;
 
+    private final AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private final AtomicInteger processedCount = new AtomicInteger(0);
+    private final AtomicInteger totalCount = new AtomicInteger(0);
+
     @Override
-    public int loadDocuments() {
+    public boolean isProcessing() {
+        return isProcessing.get();
+    }
 
+    @Override
+    public int getProcessedCount() {
+        return processedCount.get();
+    }
+
+    @Override
+    public int getTotalCount() {
+        return totalCount.get();
+    }
+
+    @Override
+    public CompletableFuture<Integer> loadDocumentsAsync() {
+        if (isProcessing.get()) {
+            log.warn("이미 문서 처리가 진행 중입니다.");
+            return CompletableFuture.completedFuture(0);
+        }
+
+        log.info("비동기 문서 로딩 시작");
+        isProcessing.set(true);
+        processedCount.set(0);
+        totalCount.set(0);
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                int result = processDocuments();
+                log.info("비동기 문서 로딩 완료: {}개 청크 처리됨", result);
+                return result;
+            } catch (Exception e) {
+                log.error("비동기 문서 처리 중 오류 발생", e);
+                throw new RuntimeException("문서 처리 중 오류 발생", e);
+            } finally {
+                isProcessing.set(false);
+            }
+        }, executor);
+    }
+
+    private int processDocuments() {
         // step 0. 기존 벡터 데이터는 덮어쓰기로 처리.
-        // RedisVectorStore의 모든 데이터를 삭제하는 것은 어려움
         log.info("기존 벡터 데이터는 덮어쓰기로 처리합니다.");
-
+    
         // step 1. 문서 로드
         List<Document> documents = loadMarkdownDocuments();
-
+        totalCount.set(documents.size());
         log.info("총 {}개의 문서를 처리합니다.", documents.size());
-
+    
         // step 2. 문서 분할
         List<Document> splitDocuments = textSplitter.split(documents);
         log.info("{}개의 원본 문서를 {}개의 청크로 분할했습니다.", documents.size(), splitDocuments.size());
-
+    
         List<Document> processedDocuments = new ArrayList<>();
-        Map<String, Integer> chunkCountByOriginal = new HashMap<>();
-
-        // step 3. 문서 임베딩 및 벡터 저장소에 추가
+        
+        // step 3. 문서 임베딩 및 벡터 저장소에 추가 (청크 인덱스 기반)
+        Map<String, Integer> chunkCountByDocument = new HashMap<>();
+        
         for (Document chunk : splitDocuments) {
-
-            // 파일명 기반으로 안정적인 ID 생성
-            String source = (String) chunk.getMetadata().get("source");
-            String stableId = "";
-
-            if (source != null && !source.isEmpty()) {
-                // 파일명에서 확장자를 제거하고 특수문자 대체
-                stableId = source.replaceAll("\\.md$", "").replaceAll("[^a-zA-Z0-9가-힣]", "_");
-            } else {
-                // source가 없는 경우 임의의 고정 ID 사용
-                stableId = "unknown_document";
+            try {
+                Optional<Document> processedChunk = processChunkWithIndex(chunk, chunkCountByDocument);
+                if (processedChunk.isPresent()) {
+                    processedDocuments.add(processedChunk.get());
+                    processedCount.incrementAndGet();
+                }
+            } catch (Exception e) {
+                log.error("청크 처리 중 오류 발생: {}", chunk.getId(), e);
             }
-
-            // 해당 원본 문서의 청크 카운트 증가
-            int chunkIndex = chunkCountByOriginal.getOrDefault(stableId, 0) + 1;
-            chunkCountByOriginal.put(stableId, chunkIndex);
-
-            // 새 ID 생성 (원본 문서 ID + 청크 번호)
-            String newId = stableId + "_" + chunkIndex;
-
-            // 메타데이터 복사 및 추가 정보 설정
-            Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
-            metadata.put("original_document_id", stableId);
-            metadata.put("chunk_index", chunkIndex);
-
-            // 새 문서 생성
-            // 분할된 문서에 고유 ID 부여 (원본 문서 ID + 청크 번호)
-            Document newChunk = new Document(newId, chunk.getText(), metadata);
-            processedDocuments.add(newChunk);
         }
-
+    
         try {
-            redisVectorStore.add(processedDocuments);
+            List<Document> batch = new ArrayList<>(BATCH_SIZE);
+    
+            for (Document doc : processedDocuments) {
+                batch.add(doc);
+                if (batch.size() >= BATCH_SIZE) {
+                    redisVectorStore.add(batch);
+                    batch.clear();
+                }
+            }
+            if (!batch.isEmpty()) {
+                redisVectorStore.add(batch);
+            }
             log.info("총 {}개 청크 처리 완료", processedDocuments.size());
             return processedDocuments.size();
         } catch (Exception e) {
@@ -113,8 +157,21 @@ public class DocumentServiceImpl implements DocumentService {
             for (Resource resource : resources) {
                 try {
 
-                    String content = readResourceContent(resource);
                     String filename = resource.getFilename();
+
+                    if (filename == null) {
+                        log.warn("파일명이 null입니다: {}", resource.getDescription());
+                        continue;
+                    }
+
+                    log.info("파일 처리 시작: {}", filename);
+
+                    String content = readResourceContent(resource);
+
+                    if (content == null || content.trim().isEmpty()) {
+                        log.warn("빈 파일 건너뜀: {}", filename);
+                        continue;
+                    }
 
                     // 메타데이터 생성
                     Map<String, Object> metadata = new HashMap<>();
@@ -155,4 +212,45 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
+    /**
+ * Document를 처리 가능한 청크로 변환하는 메서드 (청크 인덱스 기반)
+ */
+private Optional<Document> processChunkWithIndex(Document chunk, Map<String, Integer> chunkCountByDocument) {
+    return getSafeText(chunk).map(chunkText -> {
+        // 파일명 기반으로 안정적인 ID 생성
+        String source = (String) chunk.getMetadata().get("source");
+        String stableId = "";
+
+        if (source != null && !source.isEmpty()) {
+            // 파일명에서 확장자를 제거하고 특수문자 대체
+            stableId = source.replaceAll("\\.md$", "").replaceAll("[^a-zA-Z0-9가-힣]", "_");
+        } else {
+            // source가 없는 경우 임의의 고정 ID 사용
+            stableId = "unknown_document";
+        }
+
+        // 해당 문서의 청크 카운트 증가
+        int chunkIndex = chunkCountByDocument.getOrDefault(stableId, 0) + 1;
+        chunkCountByDocument.put(stableId, chunkIndex);
+
+        // 안정적인 ID 생성 (문서ID_청크번호)
+        String stableChunkId = stableId + "_chunk_" + chunkIndex;
+
+        // 메타데이터 복사
+        Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+        metadata.put("original_document_id", stableId);
+        metadata.put("chunk_index", chunkIndex);
+
+        // 안정적인 ID로 새 문서 생성
+        return new Document(stableChunkId, chunkText, metadata);
+    });
+}
+
+    /**
+     * 안전하게 Document의 텍스트를 추출하는 유틸리티 메서드
+     */
+    private Optional<String> getSafeText(Document document) {
+        return Optional.ofNullable(document.getText())
+                .filter(text -> !text.trim().isEmpty());
+    }
 }
