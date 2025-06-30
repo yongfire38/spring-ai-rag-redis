@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SpringAiOllamaApplication {
 
     private final DocumentService documentService;
+    
     public static void main(String[] args) {
         SpringApplication.run(SpringAiOllamaApplication.class, args);
     }
