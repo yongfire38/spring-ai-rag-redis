@@ -20,40 +20,43 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class RagConfig {
 
-    private final RedisVectorStore redisVectorStore;
-
-    public RagConfig(RedisVectorStore redisVectorStore) {
-        this.redisVectorStore = redisVectorStore;
-    }
-
     /**
      * RAG Advisor 설정
      */
     @Bean
-    public Advisor retrievalAugmentationAdvisor() {
+    public Advisor retrievalAugmentationAdvisor(RedisVectorStore redisVectorStore) {
         return RetrievalAugmentationAdvisor.builder()
                 .documentRetriever(VectorStoreDocumentRetriever.builder()
-                        .similarityThreshold((double) 0.60f)
+                        .similarityThreshold(0.60)
                         .vectorStore(redisVectorStore)
                         .build())
                 .queryAugmenter(ContextualQueryAugmenter.builder()
-                        .allowEmptyContext(true) // 빈 컨텍스트 허용
+                        .allowEmptyContext(true)
                         .build())
                 .build();
+    }
+
+    /**
+     * ChatMemory 및 Advisor 빈 등록
+     */
+    @Bean
+    public ChatMemory chatMemory() {
+        return MessageWindowChatMemory.builder().build();
+    }
+
+    @Bean
+    public MessageChatMemoryAdvisor messageChatMemoryAdvisor(ChatMemory chatMemory) {
+        return MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
 
     /**
      * ChatClient Bean 설정
      */
     @Bean
-    public ChatClient ollamaChatClient(OllamaChatModel chatModel) {
-
+    public ChatClient ollamaChatClient(OllamaChatModel chatModel, MessageChatMemoryAdvisor messageChatMemoryAdvisor) {
         log.info("ChatClient 구성: Chat Memory 어드바이저 추가해서 생성");
-
-        ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
-        
         return ChatClient.builder(chatModel)
-        .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
-        .build();
+            .defaultAdvisors(messageChatMemoryAdvisor)
+            .build();
     }
 }
