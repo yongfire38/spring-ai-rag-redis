@@ -37,20 +37,7 @@ public class RagConfig {
     }
 
     /**
-     * ChatMemory 및 Advisor 빈 등록
-     */
-    @Bean
-    public ChatMemory chatMemory() {
-        return MessageWindowChatMemory.builder().build();
-    }
-
-    @Bean
-    public MessageChatMemoryAdvisor messageChatMemoryAdvisor(ChatMemory chatMemory) {
-        return MessageChatMemoryAdvisor.builder(chatMemory).build();
-    }
-
-    /**
-     * ChatClient Bean 설정
+     * ChatClient Bean 설정 (ChatMemoryAdvisor는 외부에서 주입)
      */
     @Bean
     public ChatClient ollamaChatClient(OllamaChatModel chatModel, MessageChatMemoryAdvisor messageChatMemoryAdvisor) {
