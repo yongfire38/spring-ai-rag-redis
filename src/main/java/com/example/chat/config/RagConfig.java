@@ -14,15 +14,17 @@ import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class RagConfig {
 
     private final RedisVectorStore redisVectorStore;
+
+    public RagConfig(RedisVectorStore redisVectorStore) {
+        this.redisVectorStore = redisVectorStore;
+    }
 
     /**
      * RAG Advisor 설정
