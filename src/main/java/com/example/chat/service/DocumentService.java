@@ -1,6 +1,8 @@
 package com.example.chat.service;
 
 import java.util.concurrent.CompletableFuture;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.Map;
 
 /**
  * 문서 처리 서비스 인터페이스
@@ -19,4 +21,13 @@ public interface DocumentService {
     boolean isProcessing();
     int getProcessedCount();
     int getTotalCount();
+
+    // 파일 업로드 및 검증/저장 (컨트롤러에서 로직 이동)
+    Map<String, Object> uploadMarkdownFiles(MultipartFile[] files);
+
+    // 재인덱싱 요청(비동기) 및 결과 메시지 반환
+    String reindexDocuments();
+
+    // 상태 응답 객체 반환
+    DocumentStatusResponse getStatusResponse();
 }

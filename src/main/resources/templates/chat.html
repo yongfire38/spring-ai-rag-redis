@@ -191,6 +191,10 @@
         <div class="admin-panel">
             <h3>관리자 기능</h3>
             <button class="admin-button" id="reindex-btn" onclick="reindexDocuments()">문서 재인덱싱</button>
+            <!-- 파일 업로드 UI -->
+            <input type="file" id="upload-input" accept=".md" multiple style="display:none" onchange="handleFileSelect(event)">
+            <button class="admin-button" id="upload-btn" onclick="document.getElementById('upload-input').click()">문서 업로드</button>
+            <span id="upload-status" style="font-size:14px; color:#555; margin-left:10px;"></span>
             
             <div class="document-status" id="document-status">
                 <div id="status-text">문서 처리 상태</div>
@@ -432,6 +436,72 @@ function startStatusCheck() {
                     console.error('초기 상태 확인 오류:', error);
                 });
         });
+
+        // 파일 업로드 처리
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            const statusSpan = document.getElementById('upload-status');
+            const uploadBtn = document.getElementById('upload-btn');
+            statusSpan.textContent = '';
+            
+            // 파일 개수 제한
+            if (files.length === 0) return;
+            if (files.length > 5) {
+                statusSpan.textContent = '최대 5개 파일만 업로드할 수 있습니다.';
+                statusSpan.style.color = 'red';
+                return;
+            }
+            // 확장자/용량 제한
+            let totalSize = 0;
+            for (let file of files) {
+                if (!file.name.endsWith('.md')) {
+                    statusSpan.textContent = '마크다운(.md) 파일만 업로드 가능합니다.';
+                    statusSpan.style.color = 'red';
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) { // 5MB
+                    statusSpan.textContent = '파일당 최대 5MB까지만 업로드할 수 있습니다.';
+                    statusSpan.style.color = 'red';
+                    return;
+                }
+                totalSize += file.size;
+            }
+            if (totalSize > 20 * 1024 * 1024) { // 20MB
+                statusSpan.textContent = '총 20MB를 초과할 수 없습니다.';
+                statusSpan.style.color = 'red';
+                return;
+            }
+            // 업로드
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+            statusSpan.textContent = '업로드 중...';
+            statusSpan.style.color = '#555';
+            uploadBtn.disabled = true;
+            fetch('/api/documents/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    statusSpan.textContent = '업로드 성공! (' + data.uploaded + '개)';
+                    statusSpan.style.color = 'green';
+                } else {
+                    statusSpan.textContent = '업로드 실패: ' + (data.message || '알 수 없는 오류');
+                    statusSpan.style.color = 'red';
+                }
+                uploadBtn.disabled = false;
+            })
+            .catch(err => {
+                statusSpan.textContent = '업로드 중 오류 발생';
+                statusSpan.style.color = 'red';
+                uploadBtn.disabled = false;
+            });
+            // input 초기화(같은 파일 재업로드 가능)
+            event.target.value = '';
+        }
     </script>
 </body>
 </html>
