@@ -25,7 +25,6 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.util.StringUtils;
-import org.springframework.http.HttpStatus;
 
 import com.example.chat.service.DocumentService;
 import com.example.chat.service.DocumentStatusResponse;
@@ -82,18 +81,16 @@ public class DocumentServiceImpl implements DocumentService {
         processedCount.set(0);
         totalCount.set(0);
 
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                int result = processDocuments();
+        return CompletableFuture.supplyAsync(() -> processDocuments(), executor)
+            .handle((result, ex) -> {
+                isProcessing.set(false);
+                if (ex != null) {
+                    log.error("비동기 문서 처리 중 오류 발생", ex);
+                    throw new RuntimeException("문서 처리 중 오류 발생", ex);
+                }
                 log.info("비동기 문서 로딩 완료: {}개 청크 처리됨", result);
                 return result;
-            } catch (Exception e) {
-                log.error("비동기 문서 처리 중 오류 발생", e);
-                throw new RuntimeException("문서 처리 중 오류 발생", e);
-            } finally {
-                isProcessing.set(false);
-            }
-        }, executor);
+            });
     }
 
     private int processDocuments() {
