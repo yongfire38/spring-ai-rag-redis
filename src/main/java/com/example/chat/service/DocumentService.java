@@ -22,7 +22,7 @@ public interface DocumentService {
     int getProcessedCount();
     int getTotalCount();
 
-    // 파일 업로드 및 검증/저장 (컨트롤러에서 로직 이동)
+    // 파일 업로드 및 검증/저장
     Map<String, Object> uploadMarkdownFiles(MultipartFile[] files);
 
     // 재인덱싱 요청(비동기) 및 결과 메시지 반환

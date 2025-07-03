@@ -215,38 +215,38 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     /**
- * Document를 처리 가능한 청크로 변환하는 메서드 (청크 인덱스 기반)
- */
-private Optional<Document> processChunkWithIndex(Document chunk, Map<String, Integer> chunkCountByDocument) {
-    return getSafeText(chunk).map(chunkText -> {
-        // 파일명 기반으로 안정적인 ID 생성
-        String source = (String) chunk.getMetadata().get("source");
-        String stableId = "";
+    * Document를 처리 가능한 청크로 변환하는 메서드 (청크 인덱스 기반)
+    */
+    private Optional<Document> processChunkWithIndex(Document chunk, Map<String, Integer> chunkCountByDocument) {
+        return getSafeText(chunk).map(chunkText -> {
+            // 파일명 기반으로 안정적인 ID 생성
+            String source = (String) chunk.getMetadata().get("source");
+            String stableId = "";
 
-        if (source != null && !source.isEmpty()) {
-            // 파일명에서 확장자를 제거하고 특수문자 대체
-            stableId = source.replaceAll("\\.md$", "").replaceAll("[^a-zA-Z0-9가-힣]", "_");
-        } else {
-            // source가 없는 경우 임의의 고정 ID 사용
-            stableId = "unknown_document";
-        }
+            if (source != null && !source.isEmpty()) {
+                // 파일명에서 확장자를 제거하고 특수문자 대체
+                stableId = source.replaceAll("\\.md$", "").replaceAll("[^a-zA-Z0-9가-힣]", "_");
+            } else {
+                // source가 없는 경우 임의의 고정 ID 사용
+                stableId = "unknown_document";
+            }
 
-        // 해당 문서의 청크 카운트 증가
-        int chunkIndex = chunkCountByDocument.getOrDefault(stableId, 0) + 1;
-        chunkCountByDocument.put(stableId, chunkIndex);
+            // 해당 문서의 청크 카운트 증가
+            int chunkIndex = chunkCountByDocument.getOrDefault(stableId, 0) + 1;
+            chunkCountByDocument.put(stableId, chunkIndex);
 
-        // 안정적인 ID 생성 (문서ID_청크번호)
-        String stableChunkId = stableId + "_chunk_" + chunkIndex;
+            // 안정적인 ID 생성 (문서ID_청크번호)
+            String stableChunkId = stableId + "_chunk_" + chunkIndex;
 
-        // 메타데이터 복사
-        Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+            // 메타데이터 복사
+            Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
         metadata.put("original_document_id", stableId);
         metadata.put("chunk_index", chunkIndex);
 
-        // 안정적인 ID로 새 문서 생성
-        return new Document(stableChunkId, chunkText, metadata);
-    });
-}
+            // 안정적인 ID로 새 문서 생성
+            return new Document(stableChunkId, chunkText, metadata);
+        });
+    }
 
     /**
      * 안전하게 Document의 텍스트를 추출하는 유틸리티 메서드
