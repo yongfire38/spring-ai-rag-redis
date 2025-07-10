@@ -59,5 +59,4 @@ public class ChatServiceImpl implements ChatService {
             return Flux.error(e);
         }
     }
-
 }

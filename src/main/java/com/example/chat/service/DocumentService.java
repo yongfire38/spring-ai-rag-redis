@@ -21,6 +21,7 @@ public interface DocumentService {
     boolean isProcessing();
     int getProcessedCount();
     int getTotalCount();
+    int getChangedCount();
 
     // 파일 업로드 및 검증/저장
     Map<String, Object> uploadMarkdownFiles(MultipartFile[] files);

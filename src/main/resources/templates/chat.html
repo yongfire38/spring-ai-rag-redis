@@ -195,7 +195,7 @@
             <input type="file" id="upload-input" accept=".md" multiple style="display:none" onchange="handleFileSelect(event)">
             <button class="admin-button" id="upload-btn" onclick="document.getElementById('upload-input').click()">문서 업로드</button>
             <span id="upload-status" style="font-size:14px; color:#555; margin-left:10px;"></span>
-            
+            <!-- <button id="testAsyncBtn" onclick="testAsync()">비동기 테스트</button> -->
             <div class="document-status" id="document-status">
                 <div id="status-text">문서 처리 상태</div>
                 <div class="progress-container" id="progress-container" style="display: none;">
@@ -211,6 +211,12 @@
     <script>
         let currentMode = 'rag'; // 'rag' 또는 'simple'
         let statusCheckInterval = null;
+
+        function testAsync() {
+            fetch('/api/documents/testAsync', { method: 'GET' })
+  .then(res => res.json())
+  .then(data => { console.log(data); });
+        }
         
         function switchTab(mode) {
             currentMode = mode;

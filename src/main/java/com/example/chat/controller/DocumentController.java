@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,5 +43,19 @@ public class DocumentController {
         } else {
             return ResponseEntity.badRequest().body(result);
         }
+    }
+
+    @GetMapping("/testAsync")
+    public Map<String, String> testAsync() {
+        CompletableFuture.runAsync(() -> {
+            log.info("CompletableFuture 비동기 작업 실행 - 별도 스레드");
+            try {
+                Thread.sleep(2000); // 2초 대기 (비동기 확인용)
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            log.info("CompletableFuture 비동기 작업 완료");
+        });
+        return Map.of("result", "ok");
     }
 }
