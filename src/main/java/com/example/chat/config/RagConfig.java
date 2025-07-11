@@ -21,39 +21,26 @@ import lombok.extern.slf4j.Slf4j;
 public class RagConfig {
 
         @Bean
-        public ChatClient.Builder chatClientBuilder(OllamaChatModel chatModel) {
-                return ChatClient.builder(chatModel);
-        }
+    public ChatClient chatClient(OllamaChatModel chatModel, MessageChatMemoryAdvisor messageChatMemoryAdvisor) {
+        log.info("ChatClient 구성: Chat Memory 어드바이저 추가해서 생성");
+        return ChatClient.builder(chatModel)
+                .defaultAdvisors(messageChatMemoryAdvisor)
+                .build();
+    }
 
-        /**
-         * RAG Advisor 설정
-         */
-        @Bean
-        public Advisor retrievalAugmentationAdvisor(RedisVectorStore redisVectorStore,
-                        ChatClient.Builder chatClientBuilder) {
-                return RetrievalAugmentationAdvisor.builder()
-                                .queryTransformers(RewriteQueryTransformer.builder()
-                                                .chatClientBuilder(chatClientBuilder.build().mutate())
-                                                .build())
-                                .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                                .similarityThreshold(0.60)
-                                                .vectorStore(redisVectorStore)
-                                                .build())
-                                .queryAugmenter(ContextualQueryAugmenter.builder()
-                                                .allowEmptyContext(true)
-                                                .build())
-                                .build();
-        }
-
-        /**
-         * ChatClient Bean 설정 (ChatMemoryAdvisor는 외부에서 주입)
-         */
-        @Bean
-        public ChatClient ollamaChatClient(OllamaChatModel chatModel,
-                        MessageChatMemoryAdvisor messageChatMemoryAdvisor) {
-                log.info("ChatClient 구성: Chat Memory 어드바이저 추가해서 생성");
-                return ChatClient.builder(chatModel)
-                                .defaultAdvisors(messageChatMemoryAdvisor)
-                                .build();
-        }
+    @Bean
+    public Advisor retrievalAugmentationAdvisor(RedisVectorStore redisVectorStore, ChatClient chatClient) {
+        return RetrievalAugmentationAdvisor.builder()
+                .queryTransformers(RewriteQueryTransformer.builder()
+                        .chatClientBuilder(chatClient.mutate())
+                        .build())
+                .documentRetriever(VectorStoreDocumentRetriever.builder()
+                        .similarityThreshold(0.60)
+                        .vectorStore(redisVectorStore)
+                        .build())
+                .queryAugmenter(ContextualQueryAugmenter.builder()
+                        .allowEmptyContext(true)
+                        .build())
+                .build();
+    }
 }
