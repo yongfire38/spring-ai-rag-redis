@@ -54,7 +54,7 @@ public class OllamaChatController {
     }
 
     /**
-     * 일반 스트리밍 응답 생성 (ChatService 사용)
+     * 일반 스트리밍 응답 생성
      */
     @GetMapping("/ai/simple/stream")
     public Flux<ChatResponse> streamSimpleResponse(

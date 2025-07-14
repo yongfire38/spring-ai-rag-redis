@@ -10,7 +10,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 public class DocumentHashUtil {
 
     /**
-     * 문서 내용의 MD5 해시를 계산합니다.
+     * 문서 내용의 MD5 해시를 계산.
      * 
      * @param content 해시를 계산할 문서 내용
      * @return MD5 해시값

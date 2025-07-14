@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class RagConfig {
 
-        @Bean
+    @Bean
     public ChatClient chatClient(OllamaChatModel chatModel, MessageChatMemoryAdvisor messageChatMemoryAdvisor) {
         log.info("ChatClient 구성: Chat Memory 어드바이저 추가해서 생성");
         return ChatClient.builder(chatModel)

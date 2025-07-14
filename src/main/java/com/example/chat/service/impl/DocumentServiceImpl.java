@@ -282,9 +282,6 @@ public class DocumentServiceImpl implements DocumentService {
                     metadata.put("source", filename);
                     metadata.put("type", "markdown");
 
-                    // 고정 ID 생성 - 파일명을 기반으로 하여 동일 파일은 항상 동일 ID 가짐
-                    // 이를 통해 애플리케이션 재시작 시 동일 파일이 다시 추가되어도 덮어쓰기가 됨
-
                     // 한글을 보존하면서 유효한 ID 생성
                     // 파일명에서 Redis 키로 사용할 수 없는 특수 문자만 제거
                     String docId = "doc-" + filename
@@ -321,7 +318,6 @@ public class DocumentServiceImpl implements DocumentService {
      */
     private Optional<Document> processChunkWithIndex(Document chunk, Map<String, Integer> chunkCountByDocument) {
         return getSafeText(chunk).map(chunkText -> {
-            // 파일명 기반으로 안정적인 ID 생성
             // 파일명 기반으로 안정적인 ID 생성 (null 안전하게 처리)
             String source = chunk.getMetadata().containsKey("source")
                     ? String.valueOf(chunk.getMetadata().get("source"))
