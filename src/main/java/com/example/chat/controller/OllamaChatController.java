@@ -1,5 +1,7 @@
 package com.example.chat.controller;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.ai.chat.messages.UserMessage;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chat.service.ChatService;
+import com.example.chat.util.PromptEngineeringUtil;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +27,7 @@ public class OllamaChatController {
 
     private final OllamaChatModel chatModel;
     private final ChatService chatService;
+    private final RedisVectorStore redisVectorStore;
 
     /**
      * 일반 응답 생성 (테스트용)
@@ -53,14 +58,175 @@ public class OllamaChatController {
         return chatService.streamRagResponse(message);
     }
 
+    // ===== PromptEngineeringUtil 활용 테스트 엔드포인트들 =====
+
     /**
-     * 일반 스트리밍 응답 생성
+     * Zero-shot 패턴 테스트
      */
-    @GetMapping("/ai/simple/stream")
-    public Flux<ChatResponse> streamSimpleResponse(
-            @RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
-        log.info("일반 스트리밍 질의 수신: {}", message);
-        return chatService.streamSimpleResponse(message);
+    @GetMapping("/ai/prompt/zero-shot")
+    public Map<String, String> zeroShot(
+            @RequestParam(value = "message", defaultValue = "Spring Boot란 무엇인가요?") String message) {
+        String prompt = PromptEngineeringUtil.createZeroShotPrompt();
+        String fullPrompt = prompt + "\n\nQuestion: " + message;
+        return Map.of("generation", this.chatModel.call(fullPrompt));
     }
+
+    /**
+     * 컨텍스트 기반 답변 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/context-based")
+    public Map<String, String> contextBased(
+            @RequestParam(value = "message", defaultValue = "Spring Boot의 특징은?") String message,
+            @RequestParam(value = "context", defaultValue = "Spring Boot is a Java-based framework for developing web applications. It provides auto-configuration and embedded servers.") String context) {
+        String prompt = PromptEngineeringUtil.createContextBasedPrompt(context);
+        String fullPrompt = prompt + "\n\nQuestion: " + message;
+        return Map.of("generation", this.chatModel.call(fullPrompt));
+    }
+
+    /**
+     * Few-shot Learning 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/few-shot")
+    public Map<String, String> fewShot(
+            @RequestParam(value = "message", defaultValue = "Python의 특징은?") String message,
+            @RequestParam(value = "context", defaultValue = "Spring Boot is a Java-based framework for developing web applications. It provides auto-configuration and embedded servers.") String context) {
+        String prompt = PromptEngineeringUtil.createFewShotLearningPrompt(context);
+        String fullPrompt = prompt + "\n\nQuestion: " + message;
+        return Map.of("generation", this.chatModel.call(fullPrompt));
+    }
+
+    /**
+     * Chain-of-Thought 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/chain-of-thought")
+    public Map<String, String> chainOfThought(
+            @RequestParam(value = "message", defaultValue = "마이크로서비스 아키텍처의 장단점은?") String message) {
+        String prompt = PromptEngineeringUtil.createChainOfThoughtPrompt();
+        String fullPrompt = prompt + "\n\nQuestion: " + message;
+        return Map.of("generation", this.chatModel.call(fullPrompt));
+    }
+
+    /**
+     * Code Generation 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/code-generation")
+    public Map<String, String> codeGeneration(
+            @RequestParam(value = "requirement", defaultValue = "사용자 정보를 저장하는 REST API 엔드포인트 생성") String requirement,
+            @RequestParam(value = "language", defaultValue = "Java") String language) {
+        String prompt = PromptEngineeringUtil.createCodeGenerationPrompt(language, requirement);
+        return Map.of("generation", this.chatModel.call(prompt));
+    }
+
+    /**
+     * Zero-shot Code Generation 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/zero-shot-code")
+    public Map<String, String> zeroShotCodeGeneration(
+            @RequestParam(value = "requirement", defaultValue = "사용자 인증 시스템 구현") String requirement,
+            @RequestParam(value = "language", defaultValue = "Java") String language) {
+        String prompt = PromptEngineeringUtil.createZeroShotCodeGenerationPrompt(language, requirement);
+        return Map.of("generation", this.chatModel.call(prompt));
+    }
+
+    /**
+     * Structured Output 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/structured")
+    public Map<String, String> structured(
+            @RequestParam(value = "message", defaultValue = "Spring Boot의 특징을 설명해주세요") String message) {
+        String structure = PromptEngineeringUtil.getDefaultStructuredFormat();
+        String prompt = PromptEngineeringUtil.createStructuredOutputPrompt(structure);
+        String fullPrompt = prompt + "\n\nQuestion: " + message;
+        return Map.of("generation", this.chatModel.call(fullPrompt));
+    }
+
+    /**
+     * Role-based 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/role-based")
+    public Map<String, String> roleBased(
+            @RequestParam(value = "task", defaultValue = "웹 보안 강화 방법 제시") String task,
+            @RequestParam(value = "role", defaultValue = "보안 전문가") String role) {
+        String prompt = PromptEngineeringUtil.createRoleBasedPrompt(role, task);
+        return Map.of("generation", this.chatModel.call(prompt));
+    }
+
+    /**
+     * Zero-shot Role-based 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/zero-shot-role")
+    public Map<String, String> zeroShotRoleBased(
+            @RequestParam(value = "task", defaultValue = "데이터베이스 최적화 방법 제시") String task,
+            @RequestParam(value = "role", defaultValue = "데이터베이스 전문가") String role) {
+        String prompt = PromptEngineeringUtil.createZeroShotRoleBasedPrompt(role, task);
+        return Map.of("generation", this.chatModel.call(prompt));
+    }
+
+    /**
+     * Step-by-Step 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/step-by-step")
+    public Map<String, String> stepByStep(
+            @RequestParam(value = "task", defaultValue = "마이크로서비스 아키텍처로 전환하기") String task) {
+        String prompt = PromptEngineeringUtil.createStepByStepPrompt(task);
+        return Map.of("generation", this.chatModel.call(prompt));
+    }
+
+    /**
+     * Quality Check 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/quality-check")
+    public Map<String, String> qualityCheck(
+            @RequestParam(value = "content", defaultValue = "Spring Boot는 Java 기반의 웹 애플리케이션 개발을 위한 프레임워크입니다.") String content,
+            @RequestParam(value = "criteria", defaultValue = "정확성, 완성도, 가독성, 실용성") String criteria) {
+        String prompt = PromptEngineeringUtil.createQualityCheckPrompt(criteria, content);
+        return Map.of("generation", this.chatModel.call(prompt));
+    }
+
+    /**
+     * 동적 Few-shot 패턴 테스트
+     */
+    @GetMapping("/ai/prompt/dynamic-few-shot")
+    public Map<String, String> dynamicFewShot(
+            @RequestParam(value = "message", defaultValue = "React의 특징은?") String message,
+            @RequestParam(value = "context", defaultValue = "Spring Boot is a Java-based framework for developing web applications.") String context) {
+        
+        // 동적 예시 생성
+        List<Map.Entry<String, String>> examples = Arrays.asList(
+            Map.entry("What is Spring Boot?", "Spring Boot is a Java-based framework for developing web applications."),
+            Map.entry("How does Spring Boot work?", "Spring Boot uses auto-configuration and embedded servers to simplify development."),
+            Map.entry("What are the benefits of Spring Boot?", "Spring Boot reduces boilerplate code and provides rapid development capabilities.")
+        );
+        
+        String prompt = PromptEngineeringUtil.createDynamicFewShotPrompt(context, examples);
+        String fullPrompt = prompt + "\n\nQuestion: " + message;
+        return Map.of("generation", this.chatModel.call(fullPrompt));
+    }
+
+    /**
+     * 프롬프트 비교 테스트 (Zero-shot vs Few-shot)
+     */
+    @GetMapping("/ai/prompt/compare")
+    public Map<String, Object> comparePrompts(
+            @RequestParam(value = "message", defaultValue = "Docker의 장점은?") String message,
+            @RequestParam(value = "context", defaultValue = "Spring Boot is a Java-based framework for developing web applications.") String context) {
+        
+        String zeroShotPrompt = PromptEngineeringUtil.createContextBasedPrompt(context);
+        String fewShotPrompt = PromptEngineeringUtil.createFewShotLearningPrompt(context);
+        
+        String zeroShotFull = zeroShotPrompt + "\n\nQuestion: " + message;
+        String fewShotFull = fewShotPrompt + "\n\nQuestion: " + message;
+        
+        String zeroShotResponse = this.chatModel.call(zeroShotFull);
+        String fewShotResponse = this.chatModel.call(fewShotFull);
+        
+        return Map.of(
+            "question", message,
+            "zero_shot_response", zeroShotResponse,
+            "few_shot_response", fewShotResponse,
+            "comparison_note", "Zero-shot은 예시 없이, Few-shot은 예시와 함께 학습하여 응답을 생성합니다."
+        );
+    }
+
 
 }
