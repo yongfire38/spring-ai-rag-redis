@@ -28,4 +28,27 @@ public interface ChatService {
      */
     Flux<ChatResponse> streamSimpleResponse(String query);
 
+    /**
+     * JSON 구조화된 출력 - 기술 정보
+     * 
+     * @param query 사용자 질의
+     * @return JSON 구조화된 기술 정보 응답
+     */
+    TechnologyResponse getTechnologyInfoAsJson(String query);
+
+    /**
+     * JSON 구조화된 출력 - 쿼리 분석
+     * 
+     * @param query 사용자 질의
+     * @return JSON 구조화된 쿼리 분석 응답
+     */
+    QueryAnalysisResponse analyzeQueryAsJson(String query);
+
+    /**
+     * JSON 구조화된 출력 - 문서 요약
+     * 
+     * @param query 사용자 질의
+     * @return JSON 구조화된 문서 요약 응답
+     */
+    DocumentSummaryResponse getDocumentSummaryAsJson(String query);
 }

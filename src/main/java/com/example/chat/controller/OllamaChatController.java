@@ -8,13 +8,17 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chat.service.ChatService;
+import com.example.chat.service.TechnologyResponse;
+import com.example.chat.service.QueryAnalysisResponse;
+import com.example.chat.service.DocumentSummaryResponse;
 import com.example.chat.util.PromptEngineeringUtil;
-import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +60,16 @@ public class OllamaChatController {
             @RequestParam(value = "message", defaultValue = "Tell me about this document") String message) {
         log.info("RAG 기반 스트리밍 질의 수신: {}", message);
         return chatService.streamRagResponse(message);
+    }
+
+    /**
+     * 일반반 스트리밍 응답 생성
+     */
+    @GetMapping("/ai/simple/stream")
+    public Flux<ChatResponse> streamSimpleResponse(
+            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message) {
+        log.info("일반 스트리밍 질의 수신: {}", message);
+        return chatService.streamSimpleResponse(message);
     }
 
     // ===== PromptEngineeringUtil 활용 테스트 엔드포인트들 =====
@@ -217,16 +231,76 @@ public class OllamaChatController {
         String zeroShotFull = zeroShotPrompt + "\n\nQuestion: " + message;
         String fewShotFull = fewShotPrompt + "\n\nQuestion: " + message;
         
-        String zeroShotResponse = this.chatModel.call(zeroShotFull);
-        String fewShotResponse = this.chatModel.call(fewShotFull);
-        
         return Map.of(
-            "question", message,
-            "zero_shot_response", zeroShotResponse,
-            "few_shot_response", fewShotResponse,
-            "comparison_note", "Zero-shot은 예시 없이, Few-shot은 예시와 함께 학습하여 응답을 생성합니다."
+            "zeroShot", this.chatModel.call(zeroShotFull),
+            "fewShot", this.chatModel.call(fewShotFull)
         );
     }
 
+    // ===== JSON 구조화된 출력 테스트 엔드포인트들 =====
 
+    /**
+     * 기술 정보 JSON 응답 테스트
+     */
+    @GetMapping("/ai/json/technology")
+    public TechnologyResponse getTechnologyInfoAsJson(
+            @RequestParam(value = "query", defaultValue = "Spring Boot에 대해 설명해주세요") String query) {
+        return chatService.getTechnologyInfoAsJson(query);
+    }
+
+    /**
+     * 쿼리 분석 JSON 응답 테스트
+     */
+    @GetMapping("/ai/json/query-analysis")
+    public QueryAnalysisResponse analyzeQueryAsJson(
+            @RequestParam(value = "query", defaultValue = "Redis의 특징은?") String query) {
+        return chatService.analyzeQueryAsJson(query);
+    }
+
+    /**
+     * 문서 요약 JSON 응답 테스트 (RAG 사용)
+     */
+    @GetMapping("/ai/json/document-summary")
+    public DocumentSummaryResponse getDocumentSummaryAsJson(
+            @RequestParam(value = "query", defaultValue = "Open Search의 쿼리 종류에 대해 요약해주세요") String query) {
+        return chatService.getDocumentSummaryAsJson(query);
+    }
+
+    /**
+     * JSON 응답 디버깅 - 원본 텍스트 응답 확인
+     */
+    @GetMapping("/ai/json/debug/query-analysis")
+    public Map<String, String> debugQueryAnalysis(
+            @RequestParam(value = "query", defaultValue = "Redis의 특징은?") String query) {
+        try {
+            String jsonPrompt = com.example.chat.util.JsonPromptTemplates.createQueryAnalysisPrompt(query);
+            String response = chatModel.call(jsonPrompt);
+            return Map.of(
+                "originalQuery", query,
+                "jsonPrompt", jsonPrompt,
+                "rawResponse", response
+            );
+        } catch (Exception e) {
+            return Map.of("error", e.getMessage());
+        }
+    }
+
+    /**
+     * JSON 응답 디버깅 - 기술 정보 원본 텍스트 응답 확인
+     */
+    @GetMapping("/ai/json/debug/technology")
+    public Map<String, String> debugTechnologyInfo(
+            @RequestParam(value = "query", defaultValue = "Spring Boot에 대해 설명해주세요") String query) {
+        try {
+            String jsonPrompt = com.example.chat.util.JsonPromptTemplates.createTechnologyInfoPrompt(query);
+            String response = chatModel.call(jsonPrompt);
+            return Map.of(
+                "originalQuery", query,
+                "jsonPrompt", jsonPrompt,
+                "rawResponse", response
+            );
+        } catch (Exception e) {
+            return Map.of("error", e.getMessage());
+        }
+    }
 }
