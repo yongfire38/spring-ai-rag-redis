@@ -1,4 +1,4 @@
-package com.example.chat.service;
+package com.example.chat.response;
 
 /**
  * 문서 처리 상태를 나타내는 응답 객체
@@ -13,4 +13,4 @@ public record DocumentStatusResponse(
     public DocumentStatusResponse(boolean processing, int processedCount, int totalCount) {
         this(processing, processedCount, totalCount, 0);
     }
-}
+} 

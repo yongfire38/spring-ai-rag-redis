@@ -6,10 +6,10 @@ import org.springframework.ai.chat.model.ChatResponse;
 
 import org.springframework.stereotype.Service;
 
+import com.example.chat.response.DocumentSummaryResponse;
+import com.example.chat.response.QueryAnalysisResponse;
+import com.example.chat.response.TechnologyResponse;
 import com.example.chat.service.ChatService;
-import com.example.chat.service.DocumentSummaryResponse;
-import com.example.chat.service.QueryAnalysisResponse;
-import com.example.chat.service.TechnologyResponse;
 import com.example.chat.util.JsonPromptTemplates;
 
 import lombok.RequiredArgsConstructor;

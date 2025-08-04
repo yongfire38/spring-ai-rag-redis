@@ -1,4 +1,4 @@
-package com.example.chat.service;
+package com.example.chat.response;
 
 import java.util.List;
 

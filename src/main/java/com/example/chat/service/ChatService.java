@@ -2,6 +2,10 @@ package com.example.chat.service;
 
 import org.springframework.ai.chat.model.ChatResponse;
 
+import com.example.chat.response.DocumentSummaryResponse;
+import com.example.chat.response.QueryAnalysisResponse;
+import com.example.chat.response.TechnologyResponse;
+
 import reactor.core.publisher.Flux;
 
 /**
