@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class RagConfig {
 
-    @Value("${rag.prompt.pattern:chain-of-thought}")
+    @Value("${rag.prompt.pattern}")
     private String promptPattern;
 
     @Bean
