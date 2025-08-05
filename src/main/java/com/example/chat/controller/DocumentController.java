@@ -1,6 +1,8 @@
 package com.example.chat.controller;
 
 import org.springframework.web.bind.annotation.*;
+
+import com.example.chat.response.DocumentStatusResponse;
 import com.example.chat.service.DocumentService;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +12,6 @@ import java.util.concurrent.CompletableFuture;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.example.chat.service.DocumentStatusResponse;
 
 @Slf4j
 @RestController

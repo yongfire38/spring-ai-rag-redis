@@ -2,6 +2,9 @@ package com.example.chat.service;
 
 import java.util.concurrent.CompletableFuture;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.example.chat.response.DocumentStatusResponse;
+
 import java.util.Map;
 
 /**

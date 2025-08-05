@@ -1,6 +1,7 @@
 package com.example.chat.service.impl;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,8 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.chat.config.etl.transformers.ContentFormatTransformer;
+import com.example.chat.response.DocumentStatusResponse;
 import com.example.chat.service.DocumentService;
-import com.example.chat.service.DocumentStatusResponse;
 import com.example.chat.util.DocumentHashUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,8 @@ public class EnhancedDocumentServiceImpl implements DocumentService {
 
     // ETL 파이프라인 컴포넌트들
     private final DocumentReader markdownReader;
+    private final DocumentReader pdfReader;
+    private final ContentFormatTransformer contentFormatTransformer;
     private final DocumentTransformer enhancedDocumentTransformer;
     private final DocumentWriter vectorStoreWriter;
     
@@ -84,54 +88,57 @@ public class EnhancedDocumentServiceImpl implements DocumentService {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // 1단계: 문서 읽기
-                List<Document> documents = markdownReader.get();
-                totalCount.set(documents.size());
-                log.info("총 {}개의 문서를 로드했습니다.", documents.size());
+                // 1단계: 마크다운과 PDF 문서 읽기
+                List<Document> markdownDocuments = markdownReader.get();
+                List<Document> pdfDocuments = pdfReader.get();
+                
+                List<Document> allDocuments = new ArrayList<>();
+                allDocuments.addAll(markdownDocuments);
+                allDocuments.addAll(pdfDocuments);
+                
+                totalCount.set(allDocuments.size());
+                log.info("총 {}개의 문서를 로드했습니다. (마크다운: {}개, PDF: {}개)", 
+                        allDocuments.size(), markdownDocuments.size(), pdfDocuments.size());
 
                 // 2단계: 변경된 문서 필터링
-                List<Document> changedDocuments = filterChangedDocuments(documents);
+                List<Document> changedDocuments = filterChangedDocuments(allDocuments);
                 changedCount.set(changedDocuments.size());
                 log.info("총 {}개의 문서 중 {}개의 변경된 문서를 처리합니다.",
-                        documents.size(), changedDocuments.size());
+                        allDocuments.size(), changedDocuments.size());
 
                 if (changedDocuments.isEmpty()) {
                     log.info("변경된 문서가 없습니다. 인덱싱 작업을 건너뜁니다.");
                     return 0;
                 }
 
-                // 3단계: 문서 변환 (분할 + 요약 생성)
-                List<Document> processedDocuments = enhancedDocumentTransformer.apply(changedDocuments);
-                log.info("문서 변환 완료: {}개 청크 생성", processedDocuments.size());
+                // 3단계: 문서 형식 정규화 (ContentFormatTransformer)
+                log.info("문서 형식 정규화 시작");
+                List<Document> normalizedDocuments = contentFormatTransformer.apply(changedDocuments);
+                log.info("문서 형식 정규화 완료: {}개 문서", normalizedDocuments.size());
 
-                // 4단계: 벡터 저장소에 저장 (ETL 파이프라인 사용)
-                try {
-                    vectorStoreWriter.accept(processedDocuments);
-                    log.info("ETL 파이프라인을 통한 벡터 저장 완료");
-                } catch (Exception e) {
-                    log.warn("ETL 파이프라인 저장 실패, 직접 저장 시도: {}", e.getMessage());
-                    // ETL 파이프라인 실패 시 직접 저장
-                    redisVectorStore.add(processedDocuments);
-                    log.info("직접 벡터 저장 완료");
+                // 4단계: 문서 변환 (청크 분할, 메타데이터 추가)
+                log.info("문서 변환 시작");
+                List<Document> transformedDocuments = enhancedDocumentTransformer.apply(normalizedDocuments);
+                log.info("문서 변환 완료: {}개 청크 생성", transformedDocuments.size());
+
+                // 5단계: 벡터 저장소에 저장
+                log.info("벡터 저장소 저장 시작");
+                vectorStoreWriter.accept(transformedDocuments);
+                log.info("벡터 저장소 저장 완료");
+
+                // 6단계: 처리된 문서 해시 저장
+                for (Document document : changedDocuments) {
+                    saveDocumentHash(document);
                 }
 
-                // 5단계: 청크 생성 완료 후 해시값 저장 (원자적 처리)
-                // 청크가 실제로 저장되었는지 확인 후 해시값 저장
-                if (processedDocuments.size() > 0) {
-                    for (Document originalDoc : changedDocuments) {
-                        saveDocumentHash(originalDoc);
-                    }
-                    log.info("문서 해시값 저장 완료: {}개 문서", changedDocuments.size());
-                } else {
-                    log.warn("청크 생성이 실패했으므로 해시값 저장을 건너뜁니다.");
-                }
-                
-                processedCount.set(processedDocuments.size());
-                log.info("ETL 파이프라인 완료: {}개 청크 처리됨", processedDocuments.size());
-                return processedDocuments.size();
+                processedCount.set(transformedDocuments.size());
+                log.info("문서 처리 완료: {}개 문서 처리됨 (원본: {}개 → 청크: {}개)", 
+                    transformedDocuments.size(), changedDocuments.size(), transformedDocuments.size());
+
+                return transformedDocuments.size();
 
             } catch (Exception e) {
-                log.error("ETL 파이프라인 실행 중 오류 발생", e);
+                log.error("문서 처리 중 오류 발생", e);
                 throw new RuntimeException("문서 처리 중 오류 발생", e);
             } finally {
                 isProcessing.set(false);
