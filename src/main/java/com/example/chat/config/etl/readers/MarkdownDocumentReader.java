@@ -33,6 +33,12 @@ public class MarkdownDocumentReader implements DocumentReader {
         
         try {
             Resource[] resources = resolver.getResources(documentPath);
+            
+            if (resources.length == 0) {
+                log.warn("마크다운 파일을 찾을 수 없습니다: {}", documentPath);
+                return List.of();
+            }
+            
             log.info("{}개의 마크다운 파일을 찾았습니다.", resources.length);
             
             for (Resource resource : resources) {
@@ -43,7 +49,9 @@ public class MarkdownDocumentReader implements DocumentReader {
             }
         } catch (IOException e) {
             log.error("마크다운 문서 로드 중 오류 발생", e);
-            throw new RuntimeException("마크다운 문서 로드 중 오류 발생", e);
+            // 파일이 없는 경우는 정상적인 상황이므로 예외를 발생시키지 않고 빈 리스트 반환
+            log.warn("마크다운 파일을 찾을 수 없거나 접근할 수 없습니다: {}", documentPath);
+            return List.of();
         }
         
         return documents;

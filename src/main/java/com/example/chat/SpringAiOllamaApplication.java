@@ -26,7 +26,13 @@ public class SpringAiOllamaApplication {
         log.info("문서 인덱싱을 비동기적으로 시작합니다...");
         
         documentService.loadDocumentsAsync()
-                .thenAccept(count -> log.info("문서 인덱싱 완료: {}개 청크 처리됨", count))
+                .thenAccept(count -> {
+                    if (count == 0) {
+                        log.info("처리할 문서가 없습니다. 웹 인터페이스에서 문서를 업로드하거나 '문서 로드' 버튼을 클릭하세요.");
+                    } else {
+                        log.info("문서 인덱싱 완료: {}개 청크 처리됨", count);
+                    }
+                })
                 .exceptionally(throwable -> {
                     log.error("문서 인덱싱 중 오류 발생", throwable);
                     return null;

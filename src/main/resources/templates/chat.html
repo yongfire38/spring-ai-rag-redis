@@ -180,7 +180,17 @@
         </div>
         
         <div class="chat-container" id="chat-container">
-            <!-- 메시지가 여기에 추가됩니다 -->
+            <!-- 초기 안내 메시지 -->
+            <div class="message ai-message">
+                <strong>Spring AI RAG 채팅에 오신 것을 환영합니다!</strong><br><br>
+                📚 <strong>문서가 없는 경우:</strong><br>
+                • "문서 업로드" 버튼을 클릭하여 마크다운(.md) 파일을 업로드하세요<br>
+                • 또는 "문서 재인덱싱" 버튼을 클릭하여 기존 문서를 다시 로드하세요<br><br>
+                💬 <strong>채팅 모드:</strong><br>
+                • <strong>RAG 채팅:</strong> 업로드된 문서를 기반으로 한 질의응답<br>
+                • <strong>일반 채팅:</strong> 일반적인 대화 (문서 없이도 가능)<br><br>
+                🚀 지금 바로 질문해보세요!
+            </div>
         </div>
         
         <div class="input-container">
@@ -436,6 +446,19 @@ function startStatusCheck() {
                     if (data.processing) {
                         // 이미 처리 중인 경우 상태 체크 시작
                         startStatusCheck();
+                    } else if (!data.hasDocuments) {
+                        // 문서가 없는 경우 안내 메시지 표시
+                        const statusDiv = document.getElementById('document-status');
+                        const statusText = document.getElementById('status-text');
+                        
+                        statusDiv.className = 'document-status completed';
+                        statusText.textContent = '문서가 없습니다. 문서를 업로드하거나 재인덱싱을 시도해보세요.';
+                        statusDiv.style.display = 'block';
+                        
+                        // 10초 후 상태 숨김
+                        setTimeout(() => {
+                            statusDiv.style.display = 'none';
+                        }, 10000);
                     }
                 })
                 .catch(error => {
