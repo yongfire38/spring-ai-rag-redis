@@ -21,7 +21,7 @@ import org.springframework.core.io.Resource;
 
 @Slf4j
 @Component
-public class MarkdownDocumentReader implements DocumentReader {
+public class MyMarkdownReader implements DocumentReader {
 
     @Value("${spring.ai.document.path}")
     private String documentPath;

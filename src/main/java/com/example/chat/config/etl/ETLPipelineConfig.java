@@ -8,7 +8,7 @@ import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.example.chat.config.etl.readers.MarkdownDocumentReader;
+import com.example.chat.config.etl.readers.MyMarkdownReader;
 import com.example.chat.config.etl.readers.PdfDocumentReader;
 import com.example.chat.config.etl.transformers.EnhancedDocumentTransformer;
 import com.example.chat.config.etl.transformers.ContentFormatTransformer;
@@ -22,8 +22,8 @@ public class ETLPipelineConfig {
 
     @Bean
     public DocumentReader markdownReader() {
-        log.info("MarkdownDocumentReader 빈 생성");
-        return new MarkdownDocumentReader();
+        log.info("MyMarkdownReader 빈 생성");
+        return new MyMarkdownReader();
     }
 
     @Bean

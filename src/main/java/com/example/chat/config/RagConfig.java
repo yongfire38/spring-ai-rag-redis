@@ -54,7 +54,7 @@ public class RagConfig {
                         .chatClientBuilder(chatClient.mutate())
                         .build())
                 .documentRetriever(VectorStoreDocumentRetriever.builder()
-                        .similarityThreshold(0.60)
+                        .similarityThreshold(0.30)
                         .vectorStore(redisVectorStore)
                         .build())
                 .queryAugmenter(ContextualQueryAugmenter.builder()
