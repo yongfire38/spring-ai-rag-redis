@@ -1,5 +1,6 @@
 package com.example.chat.config.etl.readers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.ai.document.Document;
@@ -43,7 +44,7 @@ public class PdfDocumentReader implements DocumentReader {
             
             log.info("{}개의 PDF 파일을 찾았습니다.", resources.length);
             
-            List<Document> allDocuments = new java.util.ArrayList<>();
+            List<Document> allDocuments = new ArrayList<>();
             
             for (Resource resource : resources) {
                 log.info("PDF 파일 처리 중: {}", resource.getFilename());
