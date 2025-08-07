@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import com.example.chat.config.etl.readers.MyMarkdownReader;
 import com.example.chat.config.etl.readers.PdfDocumentReader;
 import com.example.chat.config.etl.transformers.EnhancedDocumentTransformer;
-import com.example.chat.config.etl.transformers.ContentFormatTransformer;
+import com.example.chat.config.etl.transformers.MyContentFormatTransformer;
 import com.example.chat.config.etl.writers.VectorStoreWriter;
 
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class ETLPipelineConfig {
     @Bean
     public DocumentTransformer ContentFormatTransformer() {
         log.info("ContentFormatTransformer 빈 생성");
-        return new ContentFormatTransformer();
+        return new MyContentFormatTransformer();
     }
 
     @Bean

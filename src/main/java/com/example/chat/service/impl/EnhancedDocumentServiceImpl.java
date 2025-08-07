@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.chat.config.etl.transformers.ContentFormatTransformer;
+import com.example.chat.config.etl.transformers.MyContentFormatTransformer;
 import com.example.chat.response.DocumentStatusResponse;
 import com.example.chat.service.DocumentService;
 import com.example.chat.util.DocumentHashUtil;
@@ -37,7 +37,7 @@ public class EnhancedDocumentServiceImpl implements DocumentService {
     // ETL 파이프라인 컴포넌트들
     private final DocumentReader markdownReader;
     private final DocumentReader pdfReader;
-    private final ContentFormatTransformer contentFormatTransformer;
+    private final MyContentFormatTransformer contentFormatTransformer;
     private final DocumentTransformer enhancedDocumentTransformer;
     private final DocumentWriter vectorStoreWriter;
     

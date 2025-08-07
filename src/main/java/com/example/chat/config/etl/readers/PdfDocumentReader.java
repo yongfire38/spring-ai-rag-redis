@@ -50,7 +50,7 @@ public class PdfDocumentReader implements DocumentReader {
                 log.info("PDF 파일 처리 중: {}", resource.getFilename());
                 
                 try {
-                    // Spring AI의 공식 PagePdfDocumentReader 사용 (TOC가 없는 PDF에 적합)
+                    // Spring AI의 PagePdfDocumentReader 사용
                     PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(
                         resource,
                         PdfDocumentReaderConfig.builder()
@@ -124,6 +124,8 @@ public class PdfDocumentReader implements DocumentReader {
             document.getMetadata().put("original_id", document.getId());
             document.getMetadata().put("page_number", i + 1);
             document.getMetadata().put("file_name", filename);
+            document.getMetadata().put("source", filename);
+            document.getMetadata().put("type", "pdf");
             document.getMetadata().put("content_length", content.length());
             
             log.debug("PDF Document ID 변경: {} -> {} (길이: {})", document.getId(), customId, content.length());
