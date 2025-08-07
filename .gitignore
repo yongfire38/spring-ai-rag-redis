@@ -1,5 +1,4 @@
 HELP.md
-CLAUDE.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -35,3 +34,7 @@ build/
 
 ### Embedding model ###
 /src/main/resources/model/
+
+### CLAUDE ###
+.claude/
+CLAUDE.md
