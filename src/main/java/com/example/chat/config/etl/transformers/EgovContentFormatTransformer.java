@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class MyContentFormatTransformer implements DocumentTransformer {
+public class EgovContentFormatTransformer implements DocumentTransformer {
     
     private final ContentFormatTransformer contentFormatTransformer;
     
@@ -49,7 +49,7 @@ public class MyContentFormatTransformer implements DocumentTransformer {
         "[^\\uAC00-\\uD7AF\\u1100-\\u11FF\\u3130-\\u318F\\uA960-\\uA97F\\uD7B0-\\uD7FF" +
         "a-zA-Z0-9\\s\\n\\t\\-_.,()\\[\\]{}\"':;!?@#$%&*+=|\\\\/<>]");
     
-    public MyContentFormatTransformer() {
+    public EgovContentFormatTransformer() {
         // Spring AI의 DefaultContentFormatter 사용 - 템플릿 포맷팅만 담당
         ContentFormatter contentFormatter = DefaultContentFormatter.builder()
                 .withTextTemplate("{text}")

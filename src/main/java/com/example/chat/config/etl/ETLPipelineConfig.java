@@ -1,16 +1,14 @@
 package com.example.chat.config.etl;
 
-import org.springframework.ai.document.DocumentTransformer;
-import org.springframework.ai.document.DocumentWriter;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.example.chat.config.etl.readers.MyMarkdownReader;
+import com.example.chat.config.etl.readers.EgovMarkdownReader;
 import com.example.chat.config.etl.readers.PdfDocumentReader;
 import com.example.chat.config.etl.transformers.EnhancedDocumentTransformer;
-import com.example.chat.config.etl.transformers.MyContentFormatTransformer;
+import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
 import com.example.chat.config.etl.writers.VectorStoreWriter;
 
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ETLPipelineConfig {
 
     @Bean
-    public MyMarkdownReader markdownReader() {
-        log.info("MyMarkdownReader 빈 생성");
-        return new MyMarkdownReader();
+    public EgovMarkdownReader markdownReader() {
+        log.info("EgovMarkdownReader 빈 생성");
+        return new EgovMarkdownReader();
     }
 
     @Bean
@@ -32,9 +30,9 @@ public class ETLPipelineConfig {
     }
 
     @Bean
-    public MyContentFormatTransformer myContentFormatTransformer() {
-        log.info("MyContentFormatTransformer 빈 생성");
-        return new MyContentFormatTransformer();
+    public EgovContentFormatTransformer egovContentFormatTransformer() {
+        log.info("EgovContentFormatTransformer 빈 생성");
+        return new EgovContentFormatTransformer();
     }
 
     @Bean

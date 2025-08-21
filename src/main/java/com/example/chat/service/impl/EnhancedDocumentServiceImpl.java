@@ -19,10 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.chat.config.etl.readers.MyMarkdownReader;
+import com.example.chat.config.etl.readers.EgovMarkdownReader;
 import com.example.chat.config.etl.readers.PdfDocumentReader;
 import com.example.chat.config.etl.transformers.EnhancedDocumentTransformer;
-import com.example.chat.config.etl.transformers.MyContentFormatTransformer;
+import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
 import com.example.chat.config.etl.writers.VectorStoreWriter;
 import com.example.chat.response.DocumentStatusResponse;
 import com.example.chat.service.DocumentService;
@@ -37,9 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 public class EnhancedDocumentServiceImpl implements DocumentService {
 
     // ETL 파이프라인 컴포넌트들
-    private final MyMarkdownReader markdownReader;
+    private final EgovMarkdownReader markdownReader;
     private final PdfDocumentReader pdfReader;
-    private final MyContentFormatTransformer contentFormatTransformer;
+    private final EgovContentFormatTransformer contentFormatTransformer;
     private final EnhancedDocumentTransformer enhancedDocumentTransformer;
     private final VectorStoreWriter vectorStoreWriter;
     
