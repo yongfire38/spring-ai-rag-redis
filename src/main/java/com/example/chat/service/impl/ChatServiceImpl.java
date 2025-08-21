@@ -3,14 +3,13 @@ package com.example.chat.service.impl;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.model.ChatResponse;
-
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.converter.StructuredOutputConverter;
 import org.springframework.stereotype.Service;
 
-import com.example.chat.response.DocumentSummaryResponse;
-import com.example.chat.response.QueryAnalysisResponse;
+import com.example.chat.config.ThinkTagAwareOutputConverter;
 import com.example.chat.response.TechnologyResponse;
 import com.example.chat.service.ChatService;
-import com.example.chat.util.JsonPromptTemplates;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +22,10 @@ public class ChatServiceImpl implements ChatService {
 
     private final Advisor retrievalAugmentationAdvisor;
     private final ChatClient ollamaChatClient;
+
+    // StructuredOutputConverter 인스턴스들 (<think> 태그 처리)
+    private final StructuredOutputConverter<TechnologyResponse> technologyOutputConverter = 
+        ThinkTagAwareOutputConverter.of(TechnologyResponse.class);
 
     /**
      * RAG 기반 스트리밍 응답 생성
@@ -37,6 +40,7 @@ public class ChatServiceImpl implements ChatService {
         try {
             return ollamaChatClient.prompt()
                     .advisors(retrievalAugmentationAdvisor)
+                    //.options(ChatOptions.builder().model("qwen3-4b:Q4_K_M").temperature(0.3).build())
                     .user(query).stream().chatResponse();
 
         } catch (Exception e) {
@@ -76,59 +80,16 @@ public class ChatServiceImpl implements ChatService {
         log.info("기술 정보 JSON 응답 생성: {}", query);
         
         try {
-            String jsonPrompt = JsonPromptTemplates.createTechnologyInfoPrompt(query);
+            // 커스텀 StructuredOutputConverter 사용하여 <think> 태그 처리
             return ollamaChatClient.prompt()
-                    .user(jsonPrompt)
+                    .user(u -> u.text("다음 질문에 대해 기술 정보를 제공해주세요: {query}")
+                               .param("query", query))
                     .call()
-                    .entity(TechnologyResponse.class);
+                    .entity(technologyOutputConverter);
+                    
         } catch (Exception e) {
             log.error("기술 정보 JSON 응답 생성 중 오류 발생", e);
-            return new TechnologyResponse("알 수 없음", "알 수 없음", "오류가 발생했습니다", null, null, "알 수 없음");
-        }
-    }
-
-    /**
-     * JSON 구조화된 출력 - 쿼리 분석
-     * 
-     * @param query 사용자 질의
-     * @return JSON 구조화된 쿼리 분석 응답
-     */
-    @Override
-    public QueryAnalysisResponse analyzeQueryAsJson(String query) {
-        log.info("쿼리 분석 JSON 응답 생성: {}", query);
-        
-        try {
-            String jsonPrompt = JsonPromptTemplates.createQueryAnalysisPrompt(query);
-            return ollamaChatClient.prompt()
-                    .user(jsonPrompt)
-                    .call()
-                    .entity(QueryAnalysisResponse.class);
-        } catch (Exception e) {
-            log.error("쿼리 분석 JSON 응답 생성 중 오류 발생", e);
-            return new QueryAnalysisResponse(query, "알 수 없음", null, "낮음", "분석할 수 없습니다");
-        }
-    }
-
-    /**
-     * JSON 구조화된 출력 - 문서 요약
-     * 
-     * @param query 사용자 질의
-     * @return JSON 구조화된 문서 요약 응답
-     */
-    @Override
-    public DocumentSummaryResponse getDocumentSummaryAsJson(String query) {
-        log.info("문서 요약 JSON 응답 생성: {}", query);
-        
-        try {
-            String jsonPrompt = JsonPromptTemplates.createDocumentSummaryPrompt(query);
-            return ollamaChatClient.prompt()
-                    .advisors(retrievalAugmentationAdvisor)
-                    .user(jsonPrompt)
-                    .call()
-                    .entity(DocumentSummaryResponse.class);
-        } catch (Exception e) {
-            log.error("문서 요약 JSON 응답 생성 중 오류 발생", e);
-            return new DocumentSummaryResponse("알 수 없음", "요약할 수 없습니다", null, "알 수 없음", "낮음");
+            return new TechnologyResponse("알 수 없음", "알 수 없음", "오류가 발생했습니다", null, null);
         }
     }
 }

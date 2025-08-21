@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.chat.response.DocumentSummaryResponse;
-import com.example.chat.response.QueryAnalysisResponse;
 import com.example.chat.response.TechnologyResponse;
 import com.example.chat.service.ChatService;
 import com.example.chat.util.PromptEngineeringUtil;
@@ -249,43 +247,6 @@ public class OllamaChatController {
     }
 
     /**
-     * 쿼리 분석 JSON 응답 테스트
-     */
-    @GetMapping("/ai/json/query-analysis")
-    public QueryAnalysisResponse analyzeQueryAsJson(
-            @RequestParam(value = "query", defaultValue = "Redis의 특징은?") String query) {
-        return chatService.analyzeQueryAsJson(query);
-    }
-
-    /**
-     * 문서 요약 JSON 응답 테스트 (RAG 사용)
-     */
-    @GetMapping("/ai/json/document-summary")
-    public DocumentSummaryResponse getDocumentSummaryAsJson(
-            @RequestParam(value = "query", defaultValue = "Open Search의 쿼리 종류에 대해 요약해주세요") String query) {
-        return chatService.getDocumentSummaryAsJson(query);
-    }
-
-    /**
-     * JSON 응답 디버깅 - 원본 텍스트 응답 확인
-     */
-    @GetMapping("/ai/json/debug/query-analysis")
-    public Map<String, String> debugQueryAnalysis(
-            @RequestParam(value = "query", defaultValue = "Redis의 특징은?") String query) {
-        try {
-            String jsonPrompt = com.example.chat.util.JsonPromptTemplates.createQueryAnalysisPrompt(query);
-            String response = chatModel.call(jsonPrompt);
-            return Map.of(
-                "originalQuery", query,
-                "jsonPrompt", jsonPrompt,
-                "rawResponse", response
-            );
-        } catch (Exception e) {
-            return Map.of("error", e.getMessage());
-        }
-    }
-
-    /**
      * JSON 응답 디버깅 - 기술 정보 원본 텍스트 응답 확인
      */
     @GetMapping("/ai/json/debug/technology")
@@ -293,11 +254,17 @@ public class OllamaChatController {
             @RequestParam(value = "query", defaultValue = "Spring Boot에 대해 설명해주세요") String query) {
         try {
             String jsonPrompt = com.example.chat.util.JsonPromptTemplates.createTechnologyInfoPrompt(query);
-            String response = chatModel.call(jsonPrompt);
+            String rawResponse = chatModel.call(jsonPrompt);
+            
+            // 응답 정리 테스트
+            String cleanedJson = com.example.chat.util.ResponseCleanerUtil.cleanResponse(rawResponse);
+            
             return Map.of(
                 "originalQuery", query,
                 "jsonPrompt", jsonPrompt,
-                "rawResponse", response
+                "rawResponse", rawResponse,
+                "cleanedJson", cleanedJson,
+                "hasThinkTag", String.valueOf(rawResponse.contains("<think>"))
             );
         } catch (Exception e) {
             return Map.of("error", e.getMessage());
