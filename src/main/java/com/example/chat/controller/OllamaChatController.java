@@ -55,19 +55,21 @@ public class OllamaChatController {
      */
     @GetMapping("/ai/rag/stream")
     public Flux<ChatResponse> streamRagResponse(
-            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message) {
-        log.info("RAG 기반 스트리밍 질의 수신: {}", message);
-        return chatService.streamRagResponse(message);
+            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message,
+            @RequestParam(value = "model", required = false) String model) {
+        log.info("RAG 기반 스트리밍 질의 수신: {}, 모델: {}", message, model);
+        return chatService.streamRagResponse(message, model);
     }
 
     /**
-     * 일반반 스트리밍 응답 생성
+     * 일반 스트리밍 응답 생성
      */
     @GetMapping("/ai/simple/stream")
     public Flux<ChatResponse> streamSimpleResponse(
-            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message) {
-        log.info("일반 스트리밍 질의 수신: {}", message);
-        return chatService.streamSimpleResponse(message);
+            @RequestParam(value = "message", defaultValue = "Tell me about this document") String message,
+            @RequestParam(value = "model", required = false) String model) {
+        log.info("일반 스트리밍 질의 수신: {}, 모델: {}", message, model);
+        return chatService.streamSimpleResponse(message, model);
     }
 
     // ===== PromptEngineeringUtil 활용 테스트 엔드포인트들 =====

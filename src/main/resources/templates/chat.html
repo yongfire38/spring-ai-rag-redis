@@ -168,6 +168,47 @@
             font-size: 12px;
             color: #666;
         }
+        .model-selection {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .model-selection label {
+            font-weight: bold;
+            color: #495057;
+            margin: 0;
+        }
+        .model-select {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .model-select:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .model-status {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .model-status.success {
+            color: #28a745;
+        }
+        .model-status.error {
+            color: #dc3545;
+        }
+        .model-status.warning {
+            color: #ffc107;
+        }
     </style>
 </head>
 <body>
@@ -177,6 +218,15 @@
         <div class="tabs">
             <div class="tab active" id="rag-tab" onclick="switchTab('rag')">RAG 채팅</div>
             <div class="tab" id="simple-tab" onclick="switchTab('simple')">일반 채팅</div>
+        </div>
+        
+        <!-- 모델 선택 영역 -->
+        <div class="model-selection" id="model-selection" style="display: none;">
+            <label for="model-select">사용할 모델:</label>
+            <select id="model-select" class="model-select" onchange="onModelChange()">
+                <option value="">모델을 선택하세요...</option>
+            </select>
+            <span id="model-status" class="model-status"></span>
         </div>
         
         <div class="chat-container" id="chat-container">
@@ -220,11 +270,119 @@
     <script>
         let currentMode = 'rag'; // 'rag' 또는 'simple'
         let statusCheckInterval = null;
+        let availableModels = []; // 사용 가능한 모델 목록
+        let selectedModel = ''; // 선택된 모델
 
         function testAsync() {
             fetch('/api/documents/testAsync', { method: 'GET' })
   .then(res => res.json())
   .then(data => { console.log(data); });
+        }
+        
+        /**
+         * Ollama 모델 목록을 로드합니다.
+         */
+        function loadOllamaModels() {
+            const modelSelection = document.getElementById('model-selection');
+            const modelSelect = document.getElementById('model-select');
+            const modelStatus = document.getElementById('model-status');
+            
+            // 상태 초기화
+            modelStatus.textContent = '모델 목록을 불러오는 중...';
+            modelStatus.className = 'model-status';
+            
+            fetch('/api/ollama/models')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.available) {
+                        availableModels = data.models || [];
+                        const defaultModel = data.defaultModel || '';
+                        
+                        // selectbox 옵션 초기화
+                        modelSelect.innerHTML = '<option value="">모델을 선택하세요...</option>';
+                        
+                        // 모델 옵션 추가
+                        availableModels.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            modelSelect.appendChild(option);
+                        });
+                        
+                        // 기본 모델 선택
+                        if (defaultModel && availableModels.includes(defaultModel)) {
+                            modelSelect.value = defaultModel;
+                            selectedModel = defaultModel;
+                            console.log('기본 모델 선택됨:', defaultModel);
+                        }
+                        
+                        // 모델 선택 영역 표시
+                        modelSelection.style.display = 'flex';
+                        
+                        // 상태 메시지 업데이트
+                        if (availableModels.length > 0) {
+                            if (defaultModel && availableModels.includes(defaultModel)) {
+                                modelStatus.textContent = `${availableModels.length}개 모델 발견 (기본: ${defaultModel})`;
+                            } else {
+                                modelStatus.textContent = `${availableModels.length}개 모델 발견`;
+                            }
+                            modelStatus.className = 'model-status success';
+                        } else {
+                            modelStatus.textContent = '설치된 모델이 없습니다';
+                            modelStatus.className = 'model-status warning';
+                        }
+                        
+                        console.log('Ollama 모델 목록 로드 완료:', availableModels, '기본 모델:', defaultModel);
+                        
+                    } else {
+                        // Ollama 사용 불가능한 경우
+                        modelSelection.style.display = 'flex';
+                        modelSelect.innerHTML = '<option value="">Ollama를 사용할 수 없습니다</option>';
+                        modelSelect.disabled = true;
+                        
+                        modelStatus.textContent = data.message || 'Ollama가 설치되지 않았거나 사용할 수 없습니다';
+                        modelStatus.className = 'model-status error';
+                        
+                        console.warn('Ollama 사용 불가능:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('모델 목록 로드 중 오류:', error);
+                    
+                    modelSelection.style.display = 'flex';
+                    modelSelect.innerHTML = '<option value="">모델 목록 로드 실패</option>';
+                    modelSelect.disabled = true;
+                    
+                    modelStatus.textContent = '모델 목록을 불러오는 중 오류가 발생했습니다';
+                    modelStatus.className = 'model-status error';
+                });
+        }
+        
+        /**
+         * 선택된 모델을 가져옵니다.
+         */
+        function getSelectedModel() {
+            const modelSelect = document.getElementById('model-select');
+            return modelSelect ? modelSelect.value : '';
+        }
+        
+        /**
+         * 모델 선택 변경 이벤트 핸들러
+         */
+        function onModelChange() {
+            const newSelectedModel = getSelectedModel();
+            selectedModel = newSelectedModel; // 전역 변수 업데이트
+            console.log('선택된 모델:', selectedModel);
+            
+            // 모델 변경 시 UI 피드백 (선택사항)
+            const modelStatus = document.getElementById('model-status');
+            if (selectedModel && selectedModel.trim() !== '') {
+                modelStatus.textContent = `선택된 모델: ${selectedModel}`;
+                modelStatus.className = 'model-status success';
+            } else {
+                modelStatus.textContent = '기본 모델 사용';
+                modelStatus.className = 'model-status warning';
+            }
         }
         
         function switchTab(mode) {
@@ -282,8 +440,18 @@
             // 스트리밍 API 엔드포인트 결정
             const endpoint = currentMode === 'rag' ? '/ai/rag/stream' : '/ai/simple/stream';
             
+            // 선택된 모델 가져오기
+            const selectedModel = getSelectedModel();
+            
+            // URL 파라미터 구성
+            const params = new URLSearchParams();
+            params.append('message', message);
+            if (selectedModel && selectedModel.trim() !== '') {
+                params.append('model', selectedModel);
+            }
+            
             // EventSource를 사용한 스트리밍 응답 처리
-            const eventSource = new EventSource(`${endpoint}?message=${encodeURIComponent(message)}`);
+            const eventSource = new EventSource(`${endpoint}?${params.toString()}`);
             let fullResponse = '';
             
             // 메시지 수신 시 처리 
@@ -438,6 +606,9 @@ function startStatusCheck() {
         
         // 페이지 로드 시 초기 상태 확인
         document.addEventListener('DOMContentLoaded', function() {
+            // Ollama 모델 목록 로드
+            loadOllamaModels();
+            
             // 초기 상태 확인
             fetch('/api/documents/status')
                 .then(response => response.json())

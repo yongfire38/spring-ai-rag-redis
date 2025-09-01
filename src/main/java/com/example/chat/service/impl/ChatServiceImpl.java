@@ -31,17 +31,26 @@ public class ChatServiceImpl implements ChatService {
      * RAG 기반 스트리밍 응답 생성
      * 
      * @param query 사용자 질의
+     * @param model 사용할 모델명 (null이면 기본 모델 사용)
      * @return 스트리밍 응답 Flux
      */
     @Override
-    public Flux<ChatResponse> streamRagResponse(String query) {
-        log.info("RAG 기반 스트리밍 질의 수신: {}", query);
+    public Flux<ChatResponse> streamRagResponse(String query, String model) {
+        log.info("RAG 기반 스트리밍 질의 수신: {}, 모델: {}", query, model);
 
         try {
-            return ollamaChatClient.prompt()
-                    .advisors(retrievalAugmentationAdvisor)
-                    //.options(ChatOptions.builder().model("qwen3-4b:Q4_K_M").temperature(0.3).build())
-                    .user(query).stream().chatResponse();
+            var promptBuilder = ollamaChatClient.prompt()
+                    .advisors(retrievalAugmentationAdvisor);
+            
+            // 모델이 지정된 경우 ChatOptions 설정
+            if (model != null && !model.trim().isEmpty()) {
+                promptBuilder.options(ChatOptions.builder().model(model).temperature(0.3).build());
+                log.debug("지정된 모델로 응답 생성: {}", model);
+            } else {
+                log.debug("기본 모델로 응답 생성");
+            }
+            
+            return promptBuilder.user(query).stream().chatResponse();
 
         } catch (Exception e) {
             log.error("AI 스트리밍 응답 생성 중 오류 발생", e);
@@ -53,16 +62,25 @@ public class ChatServiceImpl implements ChatService {
      * 일반 스트리밍 응답 생성
      * 
      * @param query 사용자 질의
+     * @param model 사용할 모델명 (null이면 기본 모델 사용)
      * @return 스트리밍 응답 Flux
      */
     @Override
-    public Flux<ChatResponse> streamSimpleResponse(String query) {
-        log.info("일반 스트리밍 질의 수신: {}", query);
+    public Flux<ChatResponse> streamSimpleResponse(String query, String model) {
+        log.info("일반 스트리밍 질의 수신: {}, 모델: {}", query, model);
 
         try {
-            // 일반 스트리밍 응답 생성 (RAG 없이)
-            return ollamaChatClient.prompt()
-                    .user(query).stream().chatResponse();
+            var promptBuilder = ollamaChatClient.prompt();
+            
+            // 모델이 지정된 경우 ChatOptions 설정
+            if (model != null && !model.trim().isEmpty()) {
+                promptBuilder.options(ChatOptions.builder().model(model).temperature(0.3).build());
+                log.debug("지정된 모델로 응답 생성: {}", model);
+            } else {
+                log.debug("기본 모델로 응답 생성");
+            }
+            
+            return promptBuilder.user(query).stream().chatResponse();
         } catch (Exception e) {
             log.error("AI 스트리밍 응답 생성 중 오류 발생", e);
             return Flux.error(e);
