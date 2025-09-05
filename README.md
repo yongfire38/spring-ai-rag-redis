@@ -60,6 +60,11 @@ optimum-cli export onnx -m jhgan/ko-sroberta-multitask .
 - 해당 파일들은 `\src\main\resources\model` 내에 설정하도록 한다.
 - 상세 정보는 Spring에서 제공하는 [공식 문서](https://docs.spring.io/spring-ai/reference/api/embeddings/onnx.html#_prerequisites) 를 참조 가능하다.
 
+## 문서 인덱싱
+
+- 현재 인덱싱 가능한 문서의 종류는 마크다운 파일과 PDF 파일로 구성되어 있다.
+- `application.properties` 의 `spring.ai.document.path` 및 `spring.ai.document.pdf-path` 에서 확인 가능하다.
+
 ## 실행
 
 1. 애플리케이션 실행 후 도큐먼트 생성 및 임베딩, 적재가 실행된다. 수동으로 실행하려면 메인 화면의 `문서 로드` 버튼을 클릭한다.
