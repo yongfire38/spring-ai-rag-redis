@@ -80,8 +80,8 @@ public class RagConfig {
             case "role-based" -> RagPromptTemplates.createRoleBasedRagPrompt();
             case "step-by-step" -> RagPromptTemplates.createStepByStepRagPrompt();
             default -> {
-                log.warn("알 수 없는 프롬프트 패턴 '{}'입니다. 기본값(chain-of-thought)을 사용합니다.", pattern);
-                yield RagPromptTemplates.createChainOfThoughtRagPrompt();
+                log.warn("알 수 없는 프롬프트 패턴 '{}'입니다. 기본값(few-shot)을 사용합니다.", pattern);
+                yield RagPromptTemplates.createFewShotRagPrompt();
             }
         };
     }
