@@ -43,7 +43,7 @@ public class EgovContentFormatTransformer implements DocumentTransformer {
     @Value("${spring.ai.document.normalization.clean-special-chars}")
     private boolean cleanSpecialChars;
     
-    // 정규식 패턴들 (Spring AI는 정규화 기능을 지원하지 않으므로 모든 패턴을 커스텀으로 처리)
+    // 정규식 패턴들
     private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```[\\s\\S]*?```");
     private static final Pattern SPECIAL_CHARS_PATTERN = Pattern.compile(
         "[^\\uAC00-\\uD7AF\\u1100-\\u11FF\\u3130-\\u318F\\uA960-\\uA97F\\uD7B0-\\uD7FF" +
@@ -73,7 +73,7 @@ public class EgovContentFormatTransformer implements DocumentTransformer {
         // 1. Spring AI ContentFormatTransformer로 템플릿 포맷팅 수행
         List<Document> formattedDocuments = contentFormatTransformer.apply(documents);
         
-        // 2. 커스텀 정규화 수행 (Spring AI는 정규화 기능을 지원하지 않음)
+        // 2. 커스텀 정규화 수행
         List<Document> normalizedDocuments = applyCustomNormalization(formattedDocuments);
         
         log.info("문서 형식 변환 완료: {}개 문서 (Spring AI 포맷팅 + 커스텀 정규화)", normalizedDocuments.size());

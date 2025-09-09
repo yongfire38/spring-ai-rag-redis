@@ -7,22 +7,47 @@
 | java | 17 이상 |
 | maven | 3.8.4 |
 | spring boot | 3.5.0 |
-| Spring AI | 1.0.0 |
+| Spring AI | 1.0.1 |
 
 ## 사용 기술
 
 1. Java
 2. Spring Boot (Maven)
 3. Spring AI
-4. Redis
+4. Redis Stack
 5. Ollama
 
 ## 사전 준비
 
-1. [Ollama](https://ollama.com/download) 설치
+1. [Ollama](https://ollama.com/download) 설치 및 사용할 LLM 모델을 설치한다. 폐쇄망의 경우에는 `폐쇄망에서의 Ollama 설치` 항목을 참고한다.
 2. 기본적인 임베딩 모델은 `\src\main\resources\model` 내에 설정하여 주도록 한다. 설정 방법은 `Onnx 모델 익스포트`, `사용 모델 소개` 항목을 참고한다.
-3. `\src\main\resources\data` 경로에 디폴트 문서가 존재하나, 다른 md 파일로 대체도 가능하다.
-4. `docker-compose.yml` 을 사용해 `docker compose up -d`로 docker container 기반의 Redis 설정을 해 둔다.
+3. Redis Stack에 인덱싱 될 문서의 경로는 `application.properties`의 `spring.ai.document.path` 및 `spring.ai.document.pdf-path` 속성에 설정되어 있으므로 확인 후 환경에 맞추어 변경하도록 한다.
+4. `docker-compose.yml` 을 사용해 `docker compose up -d`로 docker container 기반의 Redis 설정을 해 둔다. Redis Insight의 기본 포트는 `8001`이다.
+
+## 폐쇄망에서의 Ollama
+
+- 폐쇄망에서 Ollama 및 LLM 모델을 사용하기 위해서는 미리 인터넷이 가능한 환경에서 필요한 파일들을 준비하여 둘 필요가 있다.
+- `OllamaSetup.exe` (인스톨러) : [Ollama](https://ollama.com/download) 에서 다운로드
+- LLM 모델 : `gguf` 형식으로 다운로드 받아 둘 필요가 있다. [Ollama 모델 페이지](https://ollama.com/search) 및 [Huggingface](https://huggingface.co/) 에서 다양한 모델을 제공하고 있으므로 현재 하드웨어 사양에 맞추어 준비하여 둔다.
+- Modelfile : 모델 설정을 사용자 지정할 경우에 사용되는 파일이며 폐쇄망 환경에서는 단순히 `gguf`만 복사해서는 모델 명을 인식하지 못하므로 해당 파일로 등록을 따로 진행할 필요가 있다. 등록은 GGUF 및 modelfile 이 있는 경로에서 `ollama create [사용할 이름] –f [modelfile 명]` 으로 등록하면 된다.​
+- 동일한 LLM 모델이라도 Modelfile을 얼마나 잘 작성하냐에 따라 응답의 퀄리티는 달라질 수 있으므로 커스텀 용도로도 사용 가능하다.
+- 기본적인 작성에 관련된 사항은 [공식 문서](https://github.com/ollama/ollama/blob/main/docs/modelfile.md) 를 참고 가능하다. 다음은 기본적인 예시이다.
+
+```
+FROM hyperclova.gguf​
+
+TEMPLATE """Answer the user's questions below concisely and clearly in Korean. Do not repeat the same information.
+
+### Question:​
+
+{{ .Prompt }}​
+
+### Answer:​
+
+"""​
+
+PARAMETER temperature 0.4
+```
 
 ## Onnx 모델 익스포트
 
@@ -67,8 +92,9 @@ optimum-cli export onnx -m jhgan/ko-sroberta-multitask .
 
 ## 실행
 
-1. 애플리케이션 실행 후 도큐먼트 생성 및 임베딩, 적재가 실행된다. 수동으로 실행하려면 메인 화면의 `문서 로드` 버튼을 클릭한다.
-2. `http://localhost:8001/` 에서 데이터 확인이 가능하다.
-3. 메인 화면의 `RAG 채팅 모드`, `일반 채팅 모드` 버튼으로 RAG가 적용된 질의 답변, 일반적인 질의 답변을 받을 수 있다.
+1. 애플리케이션 실행 후 도큐먼트 생성 및 임베딩, 적재가 실행된다. 수동으로 실행하려면 메인 화면의 `문서 재인덱싱` 버튼을 클릭한다. 
+2. `문서 업로드` 버튼은 파일을 `spring.ai.document.path`에 지정된 경로로 옮긴다. 현재는 마크다운만 가능하다.
+3. `http://localhost:8001/` 에서 인덱싱된 데이터 확인이 가능하다. 이 데이터는 RAG를 적용한 답변 생성 시 LLM이 참고할 문서로 사용된다.
+4. 메인 화면의 `RAG 채팅 모드`, `일반 채팅 모드` 버튼으로 RAG가 적용된 질의 답변, 일반적인 질의 답변을 받을 수 있다.
 
 

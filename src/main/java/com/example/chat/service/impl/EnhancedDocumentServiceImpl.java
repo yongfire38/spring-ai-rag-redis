@@ -18,6 +18,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.example.chat.config.etl.readers.EgovMarkdownReader;
 import com.example.chat.config.etl.readers.PdfDocumentReader;
@@ -35,6 +36,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class EnhancedDocumentServiceImpl implements DocumentService {
+
+    @Value("${spring.ai.document.path}")
+    private String documentPath;
 
     // ETL 파이프라인 컴포넌트들
     private final EgovMarkdownReader markdownReader;
@@ -189,8 +193,7 @@ public class EnhancedDocumentServiceImpl implements DocumentService {
             return result;
         }
         // 저장 경로
-        String saveDir = "C:/workspace-test/upload/data";
-        File dir = new File(saveDir);
+        File dir = new File(documentPath);
         if (!dir.exists())
             dir.mkdirs();
         for (MultipartFile file : files) {
