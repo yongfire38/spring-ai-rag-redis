@@ -22,8 +22,8 @@ public class OllamaModelServiceImpl implements OllamaModelService {
         List<String> models = new ArrayList<>();
         
         try {
-            // 운영체제별 ollama 명령어 경로 결정
-            String[] command = getOllamaCommand("list");
+            // ollama list 명령어 실행
+            String[] command = new String[]{"ollama", "list"};
             
             // ollama list 명령어 실행
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -84,8 +84,8 @@ public class OllamaModelServiceImpl implements OllamaModelService {
     @Override
     public boolean isOllamaAvailable() {
         try {
-            // 운영체제별 ollama 명령어 경로 결정
-            String[] command = getOllamaCommand("--version");
+            // ollama --version 명령어로 Ollama 설치 여부 확인
+            String[] command = new String[]{"ollama", "--version"};
             
             // ollama --version 명령어로 Ollama 설치 여부 확인
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -105,24 +105,6 @@ public class OllamaModelServiceImpl implements OllamaModelService {
                 Thread.currentThread().interrupt();
             }
             return false;
-        }
-    }
-    
-    /**
-     * 운영체제별 ollama 명령어를 결정합니다.
-     */
-    private String[] getOllamaCommand(String subCommand) {
-        String os = System.getProperty("os.name").toLowerCase();
-        
-        if (os.contains("win")) {
-            // Windows
-            return new String[]{"ollama", subCommand};
-        } else if (os.contains("mac")) {
-            // macOS - 일반적으로 /usr/local/bin/ollama 또는 PATH에 있음
-            return new String[]{"ollama", subCommand};
-        } else {
-            // Linux - 일반적으로 /usr/bin/ollama 또는 PATH에 있음
-            return new String[]{"ollama", subCommand};
         }
     }
     
