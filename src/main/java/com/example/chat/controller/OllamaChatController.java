@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -68,7 +69,7 @@ public class OllamaChatController {
                 SessionContext.setCurrentSessionId(sessionId);
                 
                 // 첫 메시지인 경우 세션 제목 업데이트
-                List<org.springframework.ai.chat.messages.Message> history = chatSessionService.getSessionMessages(sessionId);
+                List<Message> history = chatSessionService.getSessionMessages(sessionId);
                 if (history.isEmpty()) {
                     String title = chatSessionService.generateSessionTitle(message);
                     chatSessionService.updateSessionTitle(sessionId, title);
@@ -110,7 +111,7 @@ public class OllamaChatController {
                 SessionContext.setCurrentSessionId(sessionId);
                 
                 // 첫 메시지인 경우 세션 제목 업데이트
-                List<org.springframework.ai.chat.messages.Message> history = chatSessionService.getSessionMessages(sessionId);
+                List<Message> history = chatSessionService.getSessionMessages(sessionId);
                 if (history.isEmpty()) {
                     String title = chatSessionService.generateSessionTitle(message);
                     chatSessionService.updateSessionTitle(sessionId, title);

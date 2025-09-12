@@ -1,7 +1,7 @@
 package com.example.chat.service.impl;
 
-import com.example.chat.dto.ChatSession;
 import com.example.chat.config.RedisChatMemoryRepository;
+import com.example.chat.dto.ChatSession;
 import com.example.chat.service.ChatSessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +83,7 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     @Override
     public List<Message> getSessionMessages(String sessionId) {
-        return redisChatMemoryRepository.findByConversationId(sessionId);
+        return chatMemory.get(sessionId);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         redisTemplate.delete(sessionKey);
         
         // 채팅 메모리 삭제
-        chatMemory.clear(sessionId);
+        redisChatMemoryRepository.deleteByConversationId(sessionId);
         
         log.debug("세션 삭제: {}", sessionId);
     }

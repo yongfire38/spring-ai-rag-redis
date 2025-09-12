@@ -1,5 +1,6 @@
 package com.example.chat.config;
 
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +14,12 @@ public class ChatMemoryConfig {
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(redisChatMemoryRepository)
                 .maxMessages(20) // 최근 20개 메시지만 유지, 필요시 조정
+                .build();
+    }
+    
+    @Bean
+    public MessageChatMemoryAdvisor messageChatMemoryAdvisor(ChatMemory chatMemory) {
+        return MessageChatMemoryAdvisor.builder(chatMemory)
                 .build();
     }
 }
