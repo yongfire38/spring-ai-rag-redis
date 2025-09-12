@@ -113,53 +113,47 @@ public class OllamaModelServiceImpl implements OllamaModelService {
      */
     private void setupEnvironment(ProcessBuilder processBuilder) {
         String os = System.getProperty("os.name").toLowerCase();
+        String pathSeparator = os.contains("win") ? ";" : ":";
         
-        if (os.contains("mac")) {
-            // macOS에서 PATH 환경 변수 설정
-            String currentPath = processBuilder.environment().getOrDefault("PATH", "");
-            String[] commonPaths = {
+        String currentPath = processBuilder.environment().getOrDefault("PATH", "");
+        String[] commonPaths;
+        
+        if (os.contains("win")) {
+            // Windows에서 ollama 설치 경로들
+            String username = System.getProperty("user.name");
+            commonPaths = new String[]{
+                "C:\\Users\\" + username + "\\AppData\\Local\\Programs\\Ollama",
+                "C:\\Program Files\\Ollama"
+            };
+        } else if (os.contains("mac")) {
+            // macOS에서 ollama 설치 경로들
+            commonPaths = new String[]{
                 "/usr/local/bin",
                 "/opt/homebrew/bin",
                 "/usr/bin"
             };
-            
-            StringBuilder newPath = new StringBuilder(currentPath);
-            for (String path : commonPaths) {
-                if (!currentPath.contains(path)) {
-                    if (newPath.length() > 0) {
-                        newPath.append(":");
-                    }
-                    newPath.append(path);
-                }
-            }
-            
-            if (newPath.length() > 0) {
-                processBuilder.environment().put("PATH", newPath.toString());
-                log.debug("macOS PATH 설정: {}", newPath.toString());
-            }
-        } else if (!os.contains("win")) {
-            // Linux에서 PATH 환경 변수 설정
-            String currentPath = processBuilder.environment().getOrDefault("PATH", "");
-            String[] commonPaths = {
+        } else {
+            // Linux에서 ollama 설치 경로들
+            commonPaths = new String[]{
                 "/usr/bin",
                 "/usr/local/bin",
                 "/opt/ollama"
             };
-            
-            StringBuilder newPath = new StringBuilder(currentPath);
-            for (String path : commonPaths) {
-                if (!currentPath.contains(path)) {
-                    if (newPath.length() > 0) {
-                        newPath.append(":");
-                    }
-                    newPath.append(path);
+        }
+        
+        StringBuilder newPath = new StringBuilder(currentPath);
+        for (String path : commonPaths) {
+            if (!currentPath.contains(path)) {
+                if (newPath.length() > 0) {
+                    newPath.append(pathSeparator);
                 }
+                newPath.append(path);
             }
-            
-            if (newPath.length() > 0) {
-                processBuilder.environment().put("PATH", newPath.toString());
-                log.debug("Linux PATH 설정: {}", newPath.toString());
-            }
+        }
+        
+        if (newPath.length() > 0) {
+            processBuilder.environment().put("PATH", newPath.toString());
+            log.debug("{} PATH 설정: {}", os, newPath.toString());
         }
     }
 }
