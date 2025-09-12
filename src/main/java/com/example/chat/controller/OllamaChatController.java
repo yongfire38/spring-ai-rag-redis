@@ -4,18 +4,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.ollama.OllamaChatModel;
-import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.chat.context.SessionContext;
 import com.example.chat.response.TechnologyResponse;
-import com.example.chat.service.ChatService;
+import com.example.chat.service.ChatSessionService;
+import com.example.chat.service.SessionAwareChatService;
 import com.example.chat.util.PromptEngineeringUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -28,8 +30,8 @@ import reactor.core.publisher.Flux;
 public class OllamaChatController {
 
     private final OllamaChatModel chatModel;
-    private final ChatService chatService;
-    private final RedisVectorStore redisVectorStore;
+    private final SessionAwareChatService sessionAwareChatService;
+    private final ChatSessionService chatSessionService;
 
     /**
      * 일반 응답 생성 (테스트용)
@@ -56,9 +58,40 @@ public class OllamaChatController {
     @GetMapping("/ai/rag/stream")
     public Flux<ChatResponse> streamRagResponse(
             @RequestParam(value = "message", defaultValue = "Tell me about this document") String message,
-            @RequestParam(value = "model", required = false) String model) {
-        log.info("RAG 기반 스트리밍 질의 수신: {}, 모델: {}", message, model);
-        return chatService.streamRagResponse(message, model);
+            @RequestParam(value = "model", required = false) String model,
+            @RequestParam(value = "sessionId", required = false) String sessionId) {
+        log.info("RAG 기반 스트리밍 질의 수신: {}, 모델: {}, 세션: {}", message, model, sessionId);
+        
+        // 세션 컨텍스트 설정
+        if (sessionId != null && !sessionId.isEmpty()) {
+            if (chatSessionService.sessionExists(sessionId)) {
+                SessionContext.setCurrentSessionId(sessionId);
+                
+                // 첫 메시지인 경우 세션 제목 업데이트
+                List<org.springframework.ai.chat.messages.Message> history = chatSessionService.getSessionMessages(sessionId);
+                if (history.isEmpty()) {
+                    String title = chatSessionService.generateSessionTitle(message);
+                    chatSessionService.updateSessionTitle(sessionId, title);
+                } else {
+                    // 마지막 메시지 시간 업데이트
+                    chatSessionService.updateLastMessageTime(sessionId);
+                }
+            } else {
+                log.warn("존재하지 않는 세션 ID: {}, 기본 세션으로 처리", sessionId);
+                // 존재하지 않는 세션 ID인 경우 기본 세션으로 처리
+                SessionContext.setCurrentSessionId(ChatMemory.DEFAULT_CONVERSATION_ID);
+            }
+        } else {
+            // 세션 ID가 없는 경우 기본 세션으로 처리
+            SessionContext.setCurrentSessionId(ChatMemory.DEFAULT_CONVERSATION_ID);
+        }
+        
+        return sessionAwareChatService.streamRagResponse(message, model)
+                .doFinally(signalType -> {
+                    // 스트리밍 완료 후 컨텍스트 정리
+                    SessionContext.clear();
+                    log.debug("SessionContext 정리 완료 - 세션: {}, 신호: {}", sessionId, signalType);
+                });
     }
 
     /**
@@ -67,9 +100,40 @@ public class OllamaChatController {
     @GetMapping("/ai/simple/stream")
     public Flux<ChatResponse> streamSimpleResponse(
             @RequestParam(value = "message", defaultValue = "Tell me about this document") String message,
-            @RequestParam(value = "model", required = false) String model) {
-        log.info("일반 스트리밍 질의 수신: {}, 모델: {}", message, model);
-        return chatService.streamSimpleResponse(message, model);
+            @RequestParam(value = "model", required = false) String model,
+            @RequestParam(value = "sessionId", required = false) String sessionId) {
+        log.info("일반 스트리밍 질의 수신: {}, 모델: {}, 세션: {}", message, model, sessionId);
+        
+        // 세션 컨텍스트 설정
+        if (sessionId != null && !sessionId.isEmpty()) {
+            if (chatSessionService.sessionExists(sessionId)) {
+                SessionContext.setCurrentSessionId(sessionId);
+                
+                // 첫 메시지인 경우 세션 제목 업데이트
+                List<org.springframework.ai.chat.messages.Message> history = chatSessionService.getSessionMessages(sessionId);
+                if (history.isEmpty()) {
+                    String title = chatSessionService.generateSessionTitle(message);
+                    chatSessionService.updateSessionTitle(sessionId, title);
+                } else {
+                    // 마지막 메시지 시간 업데이트
+                    chatSessionService.updateLastMessageTime(sessionId);
+                }
+            } else {
+                log.warn("존재하지 않는 세션 ID: {}, 기본 세션으로 처리", sessionId);
+                // 존재하지 않는 세션 ID인 경우 기본 세션으로 처리
+                SessionContext.setCurrentSessionId(ChatMemory.DEFAULT_CONVERSATION_ID);
+            }
+        } else {
+            // 세션 ID가 없는 경우 기본 세션으로 처리
+            SessionContext.setCurrentSessionId(ChatMemory.DEFAULT_CONVERSATION_ID);
+        }
+        
+        return sessionAwareChatService.streamSimpleResponse(message, model)
+                .doFinally(signalType -> {
+                    // 스트리밍 완료 후 컨텍스트 정리
+                    SessionContext.clear();
+                    log.debug("SessionContext 정리 완료 - 세션: {}, 신호: {}", sessionId, signalType);
+                });
     }
 
     // ===== PromptEngineeringUtil 활용 테스트 엔드포인트들 =====
@@ -245,7 +309,7 @@ public class OllamaChatController {
     @GetMapping("/ai/json/technology")
     public TechnologyResponse getTechnologyInfoAsJson(
             @RequestParam(value = "query", defaultValue = "Spring Boot에 대해 설명해주세요") String query) {
-        return chatService.getTechnologyInfoAsJson(query);
+        return sessionAwareChatService.getTechnologyInfoAsJson(query);
     }
 
     /**

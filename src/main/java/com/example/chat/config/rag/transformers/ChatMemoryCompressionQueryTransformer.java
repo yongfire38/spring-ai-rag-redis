@@ -2,6 +2,7 @@ package com.example.chat.config.rag.transformers;
 
 import java.util.List;
 
+import com.example.chat.context.SessionContext;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -28,12 +29,18 @@ public class ChatMemoryCompressionQueryTransformer implements QueryTransformer {
     @SuppressWarnings("null")
     @Override
     public Query transform(@NonNull Query query) {
-        // 기본 대화 ID 사용
-        List<Message> conversationHistory = chatMemory.get(ChatMemory.DEFAULT_CONVERSATION_ID);
+        // 현재 세션 ID를 가져와서 사용
+        String sessionId = SessionContext.getCurrentSessionId();
+        log.debug("ChatMemory 조회 - 세션 ID: {}", sessionId);
+        
+        List<Message> conversationHistory = chatMemory.get(sessionId);
         
         if (conversationHistory.isEmpty()) {
+            log.debug("대화 히스토리가 없음: {}", sessionId);
             return query;
         }
+        
+        log.debug("대화 히스토리 발견: {} - {} 개 메시지", sessionId, conversationHistory.size());
         
         // 대화 히스토리를 Query 객체로 변환
         Query queryWithHistory = Query.builder()

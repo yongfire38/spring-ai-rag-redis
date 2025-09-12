@@ -1,7 +1,6 @@
 package com.example.chat.config;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -30,11 +29,10 @@ public class RagConfig {
     private String promptPattern;
 
     @Bean
-    public ChatClient chatClient(OllamaChatModel chatModel, MessageChatMemoryAdvisor messageChatMemoryAdvisor) {
-        log.info("ChatClient 구성: Chat Memory 어드바이저 추가해서 생성");
+    public ChatClient chatClient(OllamaChatModel chatModel) {
+        log.info("ChatClient 구성: 기본 어드바이저 없이 생성 (세션별 동적 추가)");
         
         return ChatClient.builder(chatModel)
-                .defaultAdvisors(messageChatMemoryAdvisor)
                 .build();
     }
 

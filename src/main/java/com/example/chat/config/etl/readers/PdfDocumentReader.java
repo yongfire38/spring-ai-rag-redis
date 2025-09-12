@@ -98,7 +98,7 @@ public class PdfDocumentReader implements DocumentReader {
      * Document ID를 파일명과 페이지 기반으로 재생성
      */
     private List<Document> createDocumentsWithCustomIds(List<Document> documents, String filename) {
-        List<Document> documentsWithCustomIds = new java.util.ArrayList<>();
+        List<Document> documentsWithCustomIds = new ArrayList<>();
         
         for (int i = 0; i < documents.size(); i++) {
             Document document = documents.get(i);
