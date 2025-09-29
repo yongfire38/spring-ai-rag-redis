@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class EnhancedDocumentTransformer implements DocumentTransformer {
+public class EgovEnhancedDocumentTransformer implements DocumentTransformer {
 
     private final OllamaChatModel ollamaChatModel;
     private final SummaryMetadataEnricher summaryEnricher;
@@ -54,7 +54,7 @@ public class EnhancedDocumentTransformer implements DocumentTransformer {
     @Value("${spring.ai.document.keyword-count}")
     private int keywordCount;
 
-    public EnhancedDocumentTransformer(OllamaChatModel ollamaChatModel) {
+    public EgovEnhancedDocumentTransformer(OllamaChatModel ollamaChatModel) {
         this.ollamaChatModel = ollamaChatModel;
         
         // 요약 생성기 초기화 (사용 여부는 설정에 따라 결정)

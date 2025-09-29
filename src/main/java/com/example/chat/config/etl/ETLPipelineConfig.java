@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.example.chat.config.etl.readers.EgovMarkdownReader;
-import com.example.chat.config.etl.readers.PdfDocumentReader;
-import com.example.chat.config.etl.transformers.EnhancedDocumentTransformer;
+import com.example.chat.config.etl.readers.EgovPdfReader;
+import com.example.chat.config.etl.transformers.EgovEnhancedDocumentTransformer;
 import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
 import com.example.chat.config.etl.writers.VectorStoreWriter;
 
@@ -24,9 +24,9 @@ public class ETLPipelineConfig {
     }
 
     @Bean
-    public PdfDocumentReader pdfReader() {
-        log.info("PdfDocumentReader 빈 생성");
-        return new PdfDocumentReader();
+    public EgovPdfReader pdfReader() {
+        log.info("EgovPdfReader 빈 생성");
+        return new EgovPdfReader();
     }
 
     @Bean
@@ -36,9 +36,9 @@ public class ETLPipelineConfig {
     }
 
     @Bean
-    public EnhancedDocumentTransformer enhancedDocumentTransformer(OllamaChatModel ollamaChatModel) {
-        log.info("EnhancedDocumentTransformer 빈 생성");
-        return new EnhancedDocumentTransformer(ollamaChatModel);
+    public EgovEnhancedDocumentTransformer egovEnhancedDocumentTransformer(OllamaChatModel ollamaChatModel) {
+        log.info("EgovEnhancedDocumentTransformer 빈 생성");
+        return new EgovEnhancedDocumentTransformer(ollamaChatModel);
     }
 
     @Bean

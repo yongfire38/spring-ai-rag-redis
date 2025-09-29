@@ -21,8 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.example.chat.config.etl.readers.EgovMarkdownReader;
-import com.example.chat.config.etl.readers.PdfDocumentReader;
-import com.example.chat.config.etl.transformers.EnhancedDocumentTransformer;
+import com.example.chat.config.etl.readers.EgovPdfReader;
+import com.example.chat.config.etl.transformers.EgovEnhancedDocumentTransformer;
 import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
 import com.example.chat.config.etl.writers.VectorStoreWriter;
 import com.example.chat.response.DocumentStatusResponse;
@@ -42,9 +42,9 @@ public class EnhancedDocumentServiceImpl implements DocumentService {
 
     // ETL 파이프라인 컴포넌트들
     private final EgovMarkdownReader markdownReader;
-    private final PdfDocumentReader pdfReader;
+    private final EgovPdfReader pdfReader;
     private final EgovContentFormatTransformer contentFormatTransformer;
-    private final EnhancedDocumentTransformer enhancedDocumentTransformer;
+    private final EgovEnhancedDocumentTransformer enhancedDocumentTransformer;
     private final VectorStoreWriter vectorStoreWriter;
     
     // 직접 Redis 저장을 위한 컴포넌트

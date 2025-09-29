@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class PdfDocumentReader implements DocumentReader {
+public class EgovPdfReader implements DocumentReader {
 
     @Value("${spring.ai.document.pdf-path}")
     private String pdfDocumentPath;
