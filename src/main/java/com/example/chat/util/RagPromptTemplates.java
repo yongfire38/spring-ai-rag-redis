@@ -20,14 +20,15 @@ public class RagPromptTemplates {
 
                 Here are the relevant documents:
 
-                {context}
+                {context} 
 
                 **Instructions:**
-                1. Analyze the provided documents to answer the user's question
-                2. Use only the information from the documents
-                3. If the documents don't contain relevant information, say "해당 정보를 찾을 수 없습니다"
-                4. Provide accurate and specific answers based on the documents
-                5. Answer in Korean
+                1. **CRITICAL**: Read and understand the EXACT question asked by the user
+                2. **Focus**: Answer ONLY what the user is asking about
+                3. **Document-Based**: Use only information from the provided documents
+                4. **Relevance**: If documents don't contain information about the user's specific question, say "해당 정보를 찾을 수 없습니다"
+                5. **Accuracy**: Provide accurate answers based on the documents
+                6. **Language**: Answer in Korean
                 """);
     }
 
@@ -46,14 +47,12 @@ public class RagPromptTemplates {
                 {context}
 
                 **Instructions:**
-                - Read the user's question carefully and understand what they are asking
-                - Provide a comprehensive answer that directly addresses their question
-                - Structure your response in a clear, logical manner
-                - Include relevant details and examples when helpful
-                - If you're unsure about something, acknowledge the uncertainty
-                - Use only the information from the provided documents
-                - If the documents don't contain relevant information, say "해당 정보를 찾을 수 없습니다"
-                - Respond in Korean
+                1. **CRITICAL**: Read the user's question carefully and understand exactly what they are asking
+                2. **Focus**: Answer ONLY what the user is asking about - do not answer a different question
+                3. **Document-Based**: Use only information from the provided documents that is relevant to the user's specific question
+                4. **Direct Answer**: Answer the question directly and clearly
+                5. **Relevance**: If the documents don't contain information about the user's specific question, say "해당 정보를 찾을 수 없습니다"
+                6. **Language**: Respond in Korean
                 """);
     }
 
@@ -71,26 +70,18 @@ public class RagPromptTemplates {
 
                 {context}
 
-                [Few-shot Examples]
-                Here are some examples of how to answer questions based on the documents:
-
-                Example 1:
-                - Question: "What are the main features of Spring Boot?"
-                - Documents: "Spring Boot is a framework that helps create stand-alone, production-grade Spring-based applications. Key features include auto-configuration, embedded servers, starter dependencies, and production-ready features like metrics and health checks."
-                - Answer: "스프링 부트의 주요 특징은 다음과 같습니다:\n1. 자동 구성: 추가한 의존성에 따라 애플리케이션을 자동으로 구성합니다.\n2. 내장된 서버: Tomcat, Jetty 또는 Undertow와 같은 서버를 내장하고 있습니다.\n3. 스타터 의존성: 빌드 구성을 단순화합니다.\n4. 생산 준비: 메트릭, 상태 확인, 외부 구성과 같은 기능을 제공합니다."
-
-                Example 2:
-                - Question: "How does auto-configuration work in Spring Boot?"
-                - Documents: "Spring Boot auto-configuration attempts to automatically configure your Spring application based on the jar dependencies that you have added."
-                - Answer: "스프링 부트의 자동 구성은 다음과 같이 동작합니다:\n1. 클래스패스 분석: 애플리케이션의 의존성을 검사합니다.\n2. 조건부 구성: @Conditional 어노테이션을 기반으로 필요한 빈을 자동으로 구성합니다.\n3. 기본값 제공: 합리적인 기본값을 사용하여 구성을 단순화합니다.\n4. 사용자 정의: application.properties나 @Configuration 클래스를 통해 기본값을 재정의할 수 있습니다."
+                [Response Guidelines]
+                When answering questions based on the provided documents:
 
                 **Instructions:**
-                - Base your answers ONLY on the provided documents
-                - Use markdown formatting for better readability
-                - If the documents don't contain enough information, say "제공된 문서에서 이에 대한 정보를 찾을 수 없습니다"
-                - Structure your response with clear sections and bullet points
-                - Keep the response concise but informative
-                - Answer in Korean
+                1. **CRITICAL - Question Analysis**: FIRST, carefully read and understand the EXACT question asked by the user. Do NOT assume or interpret the question differently.
+                2. **Question-Answer Match**: Ensure your answer directly addresses the specific question asked, not a different topic.
+                3. **Document-Based Answer**: Use only information from the provided documents that is relevant to the user's specific question.
+                4. **Relevance Check**: If the documents don't contain information about the user's specific question, say "제공된 문서에서 이에 대한 정보를 찾을 수 없습니다"
+                5. **Accuracy**: Do not speculate on information not in the documents
+                6. **Structure**: Organize your response with clear sections and bullet points
+                7. **Language**: Respond in Korean
+                8. **Markdown**: Use markdown formatting for better readability
                 """);
     }
 
@@ -112,12 +103,13 @@ public class RagPromptTemplates {
                 When answering the question, please follow this thinking process:
 
                 [Chain of Thought Process]
-                1. First, analyze the question and identify the key concepts
-                2. Examine the provided documents for relevant information
-                3. Break down the problem into logical steps
-                4. Think through each step carefully
-                5. Consider different perspectives or approaches
-                6. Synthesize the information into a coherent answer
+                1. **CRITICAL**: First, carefully read and understand the EXACT question asked by the user. Do NOT assume or interpret the question differently.
+                2. Analyze the question and identify the key concepts that the user is actually asking about
+                3. Examine the provided documents for information that is relevant to the user's specific question
+                4. Break down the problem into logical steps based on what the user actually asked
+                5. Think through each step carefully
+                6. Consider different perspectives or approaches
+                7. Synthesize the information into a coherent answer that directly addresses the user's question
 
                 [Response Format]
                 **Thinking Process:**

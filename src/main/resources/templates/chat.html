@@ -635,13 +635,19 @@
          * 세션 관리 시스템을 초기화합니다.
          */
         function initializeSessionManagement() {
+            console.log('세션 관리 초기화 시작');
+            
             // localStorage에서 마지막 세션 ID 복원
             const savedSessionId = localStorage.getItem('currentSessionId');
+            console.log('저장된 세션 ID:', savedSessionId);
             
             // 서버에서 세션 목록 가져오기
             refreshSessionsList().then(() => {
+                console.log('세션 목록 로드 완료, 세션 수:', sessions.size);
+                
                 if (savedSessionId && sessions.has(savedSessionId)) {
                     // 이전 세션 복원
+                    console.log('이전 세션 복원:', savedSessionId);
                     switchToSession(savedSessionId);
                 } else {
                     // 세션이 없거나 유효하지 않은 경우
@@ -649,15 +655,18 @@
                         // 가장 최근 세션으로 전환
                         const latestSession = Array.from(sessions.values())
                             .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))[0];
+                        console.log('최근 세션으로 전환:', latestSession.sessionId);
                         switchToSession(latestSession.sessionId);
                     } else {
                         // 세션이 하나도 없으면 새 세션 생성
+                        console.log('세션이 없음, 새 세션 생성');
                         createNewSession();
                     }
                 }
             }).catch(error => {
                 console.error('세션 초기화 실패:', error);
                 // 오류 시 새 세션 생성
+                console.log('오류로 인한 새 세션 생성');
                 createNewSession();
             });
         }
@@ -862,8 +871,14 @@
             if (selectedModel && selectedModel.trim() !== '') {
                 params.append('model', selectedModel);
             }
+            
+            // 세션 ID 확인 및 로깅
+            console.log('현재 세션 ID:', currentSessionId);
             if (currentSessionId) {
                 params.append('sessionId', currentSessionId);
+                console.log('세션 ID 전달됨:', currentSessionId);
+            } else {
+                console.warn('세션 ID가 없음 - 기본 세션으로 처리됨');
             }
             
             // EventSource를 사용한 스트리밍 응답 처리
@@ -898,9 +913,8 @@
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             };
             
-            // 오류 발생 시 처리
+            // 오류 발생 시 처리 (console.error만 제거)
             eventSource.onerror = function(error) {
-                console.error('스트리밍 오류:', error);
                 console.error('EventSource 상태:', eventSource.readyState);
                 console.error('요청 URL:', eventSource.url);
                 

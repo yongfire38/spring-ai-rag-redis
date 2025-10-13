@@ -2,22 +2,17 @@ package com.example.chat.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.prompt.PromptTemplate;
-
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
-import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransformer;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.example.chat.config.rag.transformers.ChatMemoryCompressionQueryTransformer;
-import com.example.chat.util.RagPromptTemplates;
+import com.example.chat.config.rag.transformers.EgovCompressionQueryTransformer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +22,12 @@ public class RagConfig {
 
     @Value("${rag.prompt.pattern}")
     private String promptPattern;
+    
+    @Value("${rag.similarity.threshold}")
+    private double similarityThreshold;
+
+    @Value("${rag.top-k}")
+    private int topK;
 
     @Bean
     public ChatClient chatClient(OllamaChatModel chatModel) {
@@ -37,50 +38,88 @@ public class RagConfig {
     }
 
     @Bean
-    public Advisor retrievalAugmentationAdvisor(RedisVectorStore redisVectorStore, ChatClient chatClient, ChatMemory chatMemory) {
-        log.info("RAG 프롬프트 패턴 설정: {}", promptPattern);
-        
-        PromptTemplate selectedPromptTemplate = getPromptTemplateByPattern(promptPattern);
-        
-        return RetrievalAugmentationAdvisor.builder()
-                .queryTransformers(
-                    // Chat Memory를 활용하는 커스텀 transformer
-                    // 대화의 맥락을 유지하면서 불완전한 질문을 완전한 질문으로 변환
-                    new ChatMemoryCompressionQueryTransformer(chatMemory, chatClient),
-                    // 검색 엔진이나 벡터 스토어에 최적화된 형태로 쿼리 재작성
-                    RewriteQueryTransformer.builder()
-                        .chatClientBuilder(chatClient.mutate())
-                        .build())
-                .documentRetriever(VectorStoreDocumentRetriever.builder()
-                        .similarityThreshold(0.30)
-                        .vectorStore(redisVectorStore)
-                        .build())
-                .queryAugmenter(ContextualQueryAugmenter.builder()
-                        .allowEmptyContext(true)
-                        .promptTemplate(selectedPromptTemplate)
-                        .build())
+    public VectorStoreDocumentRetriever vectorStoreDocumentRetriever(RedisVectorStore redisVectorStore) {
+        log.info("VectorStoreDocumentRetriever 빈 생성 - 유사도 임계값: {}, Top K: {}", similarityThreshold, topK);
+
+        return VectorStoreDocumentRetriever.builder()
+                .similarityThreshold(similarityThreshold)
+                .topK(topK)
+                .vectorStore(redisVectorStore)
                 .build();
+    }
+    
+    /**
+     * 세션 ID를 직접 전달받아 RAG 어드바이저를 생성하는 정적 메서드
+     * QueryTransformer가 ChatMemory에서 히스토리를 조회하여 질문 압축 수행
+     *
+     * @param sessionId 세션 ID
+     * @param compressionTransformer 히스토리 압축 transformer
+     * @param documentRetriever Bean으로 생성된 DocumentRetriever (application.properties의 rag.similarity.threshold 적용)
+     */
+    public static Advisor createRagAdvisor(String sessionId,
+                                         EgovCompressionQueryTransformer compressionTransformer,
+                                         VectorStoreDocumentRetriever documentRetriever) {
+        log.info("RAG 어드바이저 생성 시작 - 세션: {}", sessionId);
+
+        // 세션 ID를 전달받는 커스텀 QueryTransformer 생성
+        // 이 transformer는 내부에서 ChatMemory를 조회하여 히스토리 기반 질문 압축 수행
+        SessionAwareQueryTransformer sessionAwareTransformer = new SessionAwareQueryTransformer(
+            compressionTransformer, sessionId);
+        log.info("SessionAwareQueryTransformer 생성 완료");
+
+        // QueryTransformer와 DocumentRetriever를 함께 사용
+        // 흐름: Query → QueryTransformer(히스토리 압축) → DocumentRetriever(벡터 검색)
+        RetrievalAugmentationAdvisor advisor = RetrievalAugmentationAdvisor.builder()
+                .queryTransformers(sessionAwareTransformer)
+                .documentRetriever(documentRetriever)
+                .build();
+
+        log.info("🎯 RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
+        return advisor;
     }
 
     /**
-     * 패턴에 따라 적절한 프롬프트 템플릿을 반환
+     * QueryTransformer 없이 DocumentRetriever만 사용하는 RAG 어드바이저 생성
+     * 히스토리 압축은 이미 완료된 상태이므로 QueryTransformer 불필요
+     *
+     * @param documentRetriever Bean으로 생성된 DocumentRetriever
+     * @return RetrievalAugmentationAdvisor
      */
-    private PromptTemplate getPromptTemplateByPattern(String pattern) {
-        return switch (pattern.toLowerCase()) {
-            case "basic" -> RagPromptTemplates.createBasicRagPrompt();
-            case "zero-shot" -> RagPromptTemplates.createZeroShotRagPrompt();
-            case "few-shot" -> RagPromptTemplates.createFewShotRagPrompt();
-            case "chain-of-thought" -> RagPromptTemplates.createChainOfThoughtRagPrompt();
-            case "structured" -> RagPromptTemplates.createStructuredRagPrompt();
-            case "expert" -> RagPromptTemplates.createExpertRagPrompt();
-            case "concise" -> RagPromptTemplates.createConciseRagPrompt();
-            case "educational" -> RagPromptTemplates.createEducationalRagPrompt();
-            case "role-based" -> RagPromptTemplates.createRoleBasedRagPrompt();
-            case "step-by-step" -> RagPromptTemplates.createStepByStepRagPrompt();
-            default -> {
-                log.warn("알 수 없는 프롬프트 패턴 '{}'입니다. 기본값(few-shot)을 사용합니다.", pattern);
-                yield RagPromptTemplates.createFewShotRagPrompt();
-            }
-        };
+    public static Advisor createRagAdvisor(VectorStoreDocumentRetriever documentRetriever) {
+        
+        // QueryTransformer 없이 DocumentRetriever만 사용
+        RetrievalAugmentationAdvisor advisor = RetrievalAugmentationAdvisor.builder()
+                .documentRetriever(documentRetriever)
+                .build();
+
+        return advisor;
+    }
+
+    /**
+     * 세션 ID를 직접 전달받는 커스텀 QueryTransformer
+     * ChatMemory에서 히스토리를 조회하여 CompressionQueryTransformer에 전달
+     */
+    private static class SessionAwareQueryTransformer implements QueryTransformer {
+
+        private final EgovCompressionQueryTransformer compressionTransformer;
+        private final String sessionId;
+
+        public SessionAwareQueryTransformer(EgovCompressionQueryTransformer compressionTransformer, String sessionId) {
+            this.compressionTransformer = compressionTransformer;
+            this.sessionId = sessionId;
+        }
+
+        @Override
+        public Query transform(Query query) {
+            log.info("🔄 SessionAwareQueryTransformer 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query.text());
+
+            // EgovCompressionQueryTransformer에 세션 ID 전달하여 압축 수행
+            // 내부에서 ChatMemory 조회 → 히스토리 기반 질문 압축
+            Query compressedQuery = compressionTransformer.transformWithSessionId(query, sessionId);
+
+            log.info("SessionAwareQueryTransformer 완료 - 압축된 질문: '{}'", compressedQuery.text());
+
+            return compressedQuery;
+        }
     }
 }
