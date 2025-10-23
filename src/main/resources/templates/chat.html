@@ -124,26 +124,36 @@
             color: #666;
         }
         .admin-panel {
-            margin-top: 30px;
+            margin-top: 20px;
             padding: 15px;
-            border: 1px solid #ddd;
+            border: 1px solid #34495e;
             border-radius: 5px;
-            background-color: #f5f5f5;
+            background-color: #34495e;
+            color: white;
+        }
+        .admin-panel h3 {
+            color: #ecf0f1;
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            font-weight: bold;
         }
         .admin-button {
-            padding: 8px 15px;
-            background-color: #2196F3;
+            padding: 8px 12px;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            margin-right: 10px;
+            margin: 5px 5px 5px 0;
+            font-size: 12px;
+            width: 100%;
+            display: block;
         }
         .admin-button:hover {
-            background-color: #0b7dda;
+            background-color: #2980b9;
         }
         .admin-button:disabled {
-            background-color: #cccccc;
+            background-color: #7f8c8d;
             cursor: not-allowed;
         }
         .document-status {
@@ -151,21 +161,22 @@
             padding: 10px;
             border-radius: 5px;
             display: none;
+            font-size: 12px;
         }
         .document-status.processing {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
+            background-color: #f39c12;
+            border: 1px solid #e67e22;
+            color: white;
         }
         .document-status.completed {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background-color: #27ae60;
+            border: 1px solid #229954;
+            color: white;
         }
         .document-status.error {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background-color: #e74c3c;
+            border: 1px solid #c0392b;
+            color: white;
         }
         .progress-container {
             margin-top: 10px;
@@ -333,6 +344,25 @@
         <div class="sessions-list" id="sessions-list">
             <!-- 세션 목록이 여기에 동적으로 추가됩니다 -->
         </div>
+        
+        <div class="admin-panel">
+            <h3>관리자 기능</h3>
+            <button class="admin-button" id="reindex-btn" onclick="reindexDocuments()">문서 재인덱싱</button>
+            <!-- 파일 업로드 UI -->
+            <input type="file" id="upload-input" accept=".md" multiple style="display:none" onchange="handleFileSelect(event)">
+            <button class="admin-button" id="upload-btn" onclick="document.getElementById('upload-input').click()">문서 업로드</button>
+            <span id="upload-status" style="font-size:12px; color:#bdc3c7; margin-top:5px; display:block;"></span>
+            <!-- <button id="testAsyncBtn" onclick="testAsync()">비동기 테스트</button> -->
+            <div class="document-status" id="document-status">
+                <div id="status-text">문서 처리 상태</div>
+                <div class="progress-container" id="progress-container" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">0 / 0</div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- 메인 컨텐츠 -->
@@ -370,25 +400,6 @@
         <div class="input-container">
             <input type="text" class="message-input" id="message-input" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
             <button class="send-button" id="send-btn" onclick="sendMessage()">전송</button>
-        </div>
-        
-        <div class="admin-panel">
-            <h3>관리자 기능</h3>
-            <button class="admin-button" id="reindex-btn" onclick="reindexDocuments()">문서 재인덱싱</button>
-            <!-- 파일 업로드 UI -->
-            <input type="file" id="upload-input" accept=".md" multiple style="display:none" onchange="handleFileSelect(event)">
-            <button class="admin-button" id="upload-btn" onclick="document.getElementById('upload-input').click()">문서 업로드</button>
-            <span id="upload-status" style="font-size:14px; color:#555; margin-left:10px;"></span>
-            <!-- <button id="testAsyncBtn" onclick="testAsync()">비동기 테스트</button> -->
-            <div class="document-status" id="document-status">
-                <div id="status-text">문서 처리 상태</div>
-                <div class="progress-container" id="progress-container" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                    <div class="progress-text" id="progress-text">0 / 0</div>
-                </div>
-            </div>
         </div>
     </div>
 
