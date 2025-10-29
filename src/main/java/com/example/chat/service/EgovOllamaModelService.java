@@ -8,14 +8,14 @@ import java.util.List;
 public interface EgovOllamaModelService {
     
     /**
-     * 설치된 Ollama 모델 목록을 가져옵니다.
+     * 설치된 Ollama 모델 목록을 가져옴
      * 
      * @return 모델 이름 목록
      */
     List<String> getInstalledModels();
     
     /**
-     * Ollama 서비스가 사용 가능한지 확인합니다.
+     * Ollama 서비스가 사용 가능한지 확인
      * 
      * @return 사용 가능 여부
      */

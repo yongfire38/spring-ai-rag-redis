@@ -74,7 +74,7 @@ public class EgovRagConfig {
                 .documentRetriever(documentRetriever)
                 .build();
 
-        log.info("🎯 RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
+        log.info("RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
         return advisor;
     }
 
@@ -111,7 +111,7 @@ public class EgovRagConfig {
 
         @Override
         public Query transform(Query query) {
-            log.info("🔄 SessionAwareQueryTransformer 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query.text());
+            log.info("SessionAwareQueryTransformer 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query.text());
 
             // EgovCompressionQueryTransformer에 세션 ID 전달하여 압축 수행
             // 내부에서 ChatMemory 조회 → 히스토리 기반 질문 압축

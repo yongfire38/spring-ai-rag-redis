@@ -80,7 +80,6 @@ public class EgovCompressionQueryTransformer {
             .build();
         
         // Spring AI 기본 CompressionQueryTransformer 사용
-        // temperature를 낮춰서 더 정확하고 일관된 압축 결과 생성
         CompressionQueryTransformer compressionTransformer = CompressionQueryTransformer.builder()
             .chatClientBuilder(chatClient.mutate()
                 .defaultOptions(ChatOptions.builder()

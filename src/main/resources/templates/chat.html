@@ -342,7 +342,7 @@
         
         <div class="sessions-header">채팅 목록</div>
         <div class="sessions-list" id="sessions-list">
-            <!-- 세션 목록이 여기에 동적으로 추가됩니다 -->
+            <!-- 세션 목록이 여기에 동적으로 추가 -->
         </div>
         
         <div class="admin-panel">
@@ -427,7 +427,7 @@
         // ===== 채팅 세션 관리 함수들 =====
         
         /**
-         * 새 채팅 세션을 생성합니다.
+         * 새 채팅 세션을 생성
          */
         function createNewSession() {
             fetch('/api/chat/sessions', {
@@ -452,7 +452,7 @@
         }
         
         /**
-         * 특정 세션으로 전환합니다.
+         * 특정 세션으로 전환
          */
         function switchToSession(sessionId) {
             currentSessionId = sessionId;
@@ -477,7 +477,7 @@
         }
         
         /**
-         * 세션의 메시지들을 로드합니다.
+         * 세션의 메시지들을 로드
          */
         function loadSessionMessages(sessionId) {
             const chatContainer = document.getElementById('chat-container');
@@ -533,7 +533,7 @@
         }
         
         /**
-         * 세션 목록 UI를 업데이트합니다.
+         * 세션 목록 UI를 업데이트
          */
         function updateSessionListUI() {
             const sessionsList = document.getElementById('sessions-list');
@@ -598,7 +598,7 @@
         }
         
         /**
-         * 세션을 삭제합니다.
+         * 세션을 삭제
          */
         function deleteSession(sessionId, event) {
             event.stopPropagation(); // 클릭 이벤트 버블링 방지
@@ -643,7 +643,7 @@
         }
         
         /**
-         * 세션 관리 시스템을 초기화합니다.
+         * 세션 관리 시스템을 초기화
          */
         function initializeSessionManagement() {
             console.log('세션 관리 초기화 시작');
@@ -683,7 +683,7 @@
         }
         
         /**
-         * 서버에서 세션 목록을 가져와 새로고침합니다. (Promise 반환)
+         * 서버에서 세션 목록을 가져와 새로고침 (Promise 반환)
          */
         function refreshSessionsList() {
             return fetch('/api/chat/sessions')
@@ -707,7 +707,7 @@
         }
         
         /**
-         * Ollama 모델 목록을 로드합니다.
+         * Ollama 모델 목록을 로드
          */
         function loadOllamaModels() {
             const modelSelection = document.getElementById('model-selection');
@@ -786,7 +786,7 @@
         }
         
         /**
-         * 선택된 모델을 가져옵니다.
+         * 선택된 모델을 가져옴
          */
         function getSelectedModel() {
             const modelSelect = document.getElementById('model-select');

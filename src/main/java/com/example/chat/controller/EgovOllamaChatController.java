@@ -19,7 +19,9 @@ import com.example.chat.context.SessionContext;
 import com.example.chat.response.TechnologyResponse;
 import com.example.chat.service.EgovChatSessionService;
 import com.example.chat.service.EgovSessionAwareChatService;
+import com.example.chat.util.JsonPromptTemplates;
 import com.example.chat.util.PromptEngineeringUtil;
+import com.example.chat.util.ResponseCleanerUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -329,11 +331,11 @@ public class EgovOllamaChatController {
     public Map<String, String> debugTechnologyInfo(
             @RequestParam(value = "query", defaultValue = "Spring Boot에 대해 설명해주세요") String query) {
         try {
-            String jsonPrompt = com.example.chat.util.JsonPromptTemplates.createTechnologyInfoPrompt(query);
+            String jsonPrompt = JsonPromptTemplates.createTechnologyInfoPrompt(query);
             String rawResponse = chatModel.call(jsonPrompt);
             
             // 응답 정리 테스트
-            String cleanedJson = com.example.chat.util.ResponseCleanerUtil.cleanResponse(rawResponse);
+            String cleanedJson = ResponseCleanerUtil.cleanResponse(rawResponse);
             
             return Map.of(
                 "originalQuery", query,

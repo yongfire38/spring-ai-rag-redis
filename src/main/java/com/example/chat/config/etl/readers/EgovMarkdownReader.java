@@ -49,7 +49,7 @@ public class EgovMarkdownReader implements DocumentReader {
             }
         } catch (IOException e) {
             log.error("마크다운 문서 로드 중 오류 발생", e);
-            // 파일이 없는 경우도 있을 수 있으므로로 예외를 발생시키지 않고 빈 리스트 반환
+            // 파일이 없는 경우도 있을 수 있으므로 예외를 발생시키지 않고 빈 리스트 반환
             log.warn("마크다운 파일을 찾을 수 없거나 접근할 수 없습니다: {}", documentPath);
             return List.of();
         }

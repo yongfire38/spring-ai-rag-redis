@@ -111,7 +111,7 @@ public class EgovOllamaModelServiceImpl extends EgovAbstractServiceImpl implemen
     }
     
     /**
-     * 운영체제별 환경 변수를 설정합니다.
+     * 운영체제별 환경 변수를 설정
      */
     private void setupEnvironment(ProcessBuilder processBuilder) {
         String os = System.getProperty("os.name").toLowerCase();

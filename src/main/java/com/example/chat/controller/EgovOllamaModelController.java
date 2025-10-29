@@ -28,7 +28,7 @@ public class EgovOllamaModelController {
     private String defaultModel;
 
     /**
-     * 설치된 Ollama 모델 목록을 반환합니다.
+     * 설치된 Ollama 모델 목록을 반환
      * 
      * @return 모델 목록과 상태 정보
      */
