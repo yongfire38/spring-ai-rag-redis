@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
-import com.example.chat.service.DocumentService;
+import com.example.chat.service.EgovDocumentService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SpringAiOllamaApplication {
 
-    private final DocumentService documentService;
+    private final EgovDocumentService documentService;
     
     public static void main(String[] args) {
         SpringApplication.run(SpringAiOllamaApplication.class, args);

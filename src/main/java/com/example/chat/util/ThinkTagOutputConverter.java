@@ -1,6 +1,4 @@
-package com.example.chat.config;
-
-import com.example.chat.util.ResponseCleanerUtil;
+package com.example.chat.util;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,11 +9,11 @@ import org.springframework.ai.converter.StructuredOutputConverter;
  * 추론 모델의 <think> 태그를 처리하는 커스텀 StructuredOutputConverter
  */
 @Slf4j
-public class ThinkTagAwareOutputConverter<T> implements StructuredOutputConverter<T> {
+public class ThinkTagOutputConverter<T> implements StructuredOutputConverter<T> {
     
     private final BeanOutputConverter<T> delegate;
 
-    public ThinkTagAwareOutputConverter(Class<T> targetClass) {
+    public ThinkTagOutputConverter(Class<T> targetClass) {
         this.delegate = new BeanOutputConverter<>(targetClass);
     }
 
@@ -48,7 +46,7 @@ public class ThinkTagAwareOutputConverter<T> implements StructuredOutputConverte
      * @param targetClass 대상 클래스
      * @return ThinkTagAwareOutputConverter 인스턴스
      */
-    public static <T> ThinkTagAwareOutputConverter<T> of(Class<T> targetClass) {
-        return new ThinkTagAwareOutputConverter<>(targetClass);
+    public static <T> ThinkTagOutputConverter<T> of(Class<T> targetClass) {
+        return new ThinkTagOutputConverter<>(targetClass);
     }
 }

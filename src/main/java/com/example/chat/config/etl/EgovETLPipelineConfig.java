@@ -9,13 +9,13 @@ import com.example.chat.config.etl.readers.EgovMarkdownReader;
 import com.example.chat.config.etl.readers.EgovPdfReader;
 import com.example.chat.config.etl.transformers.EgovEnhancedDocumentTransformer;
 import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
-import com.example.chat.config.etl.writers.VectorStoreWriter;
+import com.example.chat.config.etl.writers.EgovVectorStoreWriter;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-public class ETLPipelineConfig {
+public class EgovETLPipelineConfig {
 
     @Bean
     public EgovMarkdownReader markdownReader() {
@@ -42,8 +42,8 @@ public class ETLPipelineConfig {
     }
 
     @Bean
-    public VectorStoreWriter vectorStoreWriter(RedisVectorStore redisVectorStore) {
+    public EgovVectorStoreWriter vectorStoreWriter(RedisVectorStore redisVectorStore) {
         log.info("VectorStore DocumentWriter 빈 생성");
-        return new VectorStoreWriter(redisVectorStore);
+        return new EgovVectorStoreWriter(redisVectorStore);
     }
 } 

@@ -1,4 +1,4 @@
-package com.example.chat.config;
+package com.example.chat.repository;
 
 import java.util.List;
 import java.util.Map;
@@ -27,12 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class RedisChatMemoryRepository implements ChatMemoryRepository {
+public class EgovRedisChatMemoryRepository implements ChatMemoryRepository {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     
-    public RedisChatMemoryRepository(RedisTemplate<String, Object> redisTemplate) {
+    public EgovRedisChatMemoryRepository(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = new ObjectMapper();
         // Jackson 설정

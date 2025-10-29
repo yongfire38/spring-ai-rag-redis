@@ -3,7 +3,7 @@ package com.example.chat.controller;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.chat.response.DocumentStatusResponse;
-import com.example.chat.service.DocumentService;
+import com.example.chat.service.EgovDocumentService;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 
@@ -18,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
 @CrossOrigin
-public class DocumentController {
+public class EgovDocumentController {
 
-    private final DocumentService documentService;
+    private final EgovDocumentService documentService;
 
     @GetMapping("/status")
     public DocumentStatusResponse getStatus() {

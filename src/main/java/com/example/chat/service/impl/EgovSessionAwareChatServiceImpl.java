@@ -1,5 +1,6 @@
 package com.example.chat.service.impl;
 
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ChatClient.ChatClientRequestSpec;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -12,12 +13,12 @@ import org.springframework.ai.rag.Query;
 import org.springframework.stereotype.Service;
 
 import com.example.chat.context.SessionContext;
-import com.example.chat.config.ThinkTagAwareOutputConverter;
-import com.example.chat.config.RagConfig;
+import com.example.chat.config.EgovRagConfig;
 import com.example.chat.config.rag.transformers.EgovCompressionQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import com.example.chat.response.TechnologyResponse;
-import com.example.chat.service.SessionAwareChatService;
+import com.example.chat.service.EgovSessionAwareChatService;
+import com.example.chat.util.ThinkTagOutputConverter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ import reactor.core.publisher.Flux;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SessionAwareChatServiceImpl implements SessionAwareChatService {
+public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl implements EgovSessionAwareChatService {
 
     private final ChatClient ollamaChatClient;
     private final MessageChatMemoryAdvisor messageChatMemoryAdvisor;
@@ -35,7 +36,7 @@ public class SessionAwareChatServiceImpl implements SessionAwareChatService {
     
     // StructuredOutputConverter 인스턴스들 (<think> 태그 처리)
     private final StructuredOutputConverter<TechnologyResponse> technologyOutputConverter = 
-        ThinkTagAwareOutputConverter.of(TechnologyResponse.class);
+        ThinkTagOutputConverter.of(TechnologyResponse.class);
 
     /**
      * 세션별 RAG 기반 스트리밍 응답 생성
@@ -57,7 +58,7 @@ public class SessionAwareChatServiceImpl implements SessionAwareChatService {
 
             // RAG 어드바이저 생성 (QueryTransformer 없이 DocumentRetriever만 사용)
             log.info("RAG 어드바이저 생성 시작 - 세션: {}, 압축된 질문: '{}'", sessionId, compressedQuery);
-            Advisor ragAdvisor = RagConfig.createRagAdvisor(vectorStoreDocumentRetriever);
+            Advisor ragAdvisor = EgovRagConfig.createRagAdvisor(vectorStoreDocumentRetriever);
             log.info("RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
 
             log.info("RAG 스트리밍 시작 - 세션: {}, 압축된 질문: '{}'", sessionId, compressedQuery);

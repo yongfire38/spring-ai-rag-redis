@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chat.context.SessionContext;
 import com.example.chat.response.TechnologyResponse;
-import com.example.chat.service.ChatSessionService;
-import com.example.chat.service.SessionAwareChatService;
+import com.example.chat.service.EgovChatSessionService;
+import com.example.chat.service.EgovSessionAwareChatService;
 import com.example.chat.util.PromptEngineeringUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -28,11 +28,11 @@ import reactor.core.publisher.Flux;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class OllamaChatController {
+public class EgovOllamaChatController {
 
     private final OllamaChatModel chatModel;
-    private final SessionAwareChatService sessionAwareChatService;
-    private final ChatSessionService chatSessionService;
+    private final EgovSessionAwareChatService sessionAwareChatService;
+    private final EgovChatSessionService chatSessionService;
 
     /**
      * 일반 응답 생성 (테스트용)

@@ -6,11 +6,13 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.example.chat.repository.EgovRedisChatMemoryRepository;
+
 @Configuration
-public class ChatMemoryConfig {
+public class EgovChatMemoryConfig {
     
     @Bean
-    public ChatMemory chatMemory(RedisChatMemoryRepository redisChatMemoryRepository) {
+    public ChatMemory chatMemory(EgovRedisChatMemoryRepository redisChatMemoryRepository) {
         return MessageWindowChatMemory.builder()
                 .chatMemoryRepository(redisChatMemoryRepository)
                 .maxMessages(20) // 최근 20개 메시지만 유지, 필요시 조정

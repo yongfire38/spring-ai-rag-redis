@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.ai.document.Document;
 
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
@@ -24,9 +25,9 @@ import com.example.chat.config.etl.readers.EgovMarkdownReader;
 import com.example.chat.config.etl.readers.EgovPdfReader;
 import com.example.chat.config.etl.transformers.EgovEnhancedDocumentTransformer;
 import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
-import com.example.chat.config.etl.writers.VectorStoreWriter;
+import com.example.chat.config.etl.writers.EgovVectorStoreWriter;
 import com.example.chat.response.DocumentStatusResponse;
-import com.example.chat.service.DocumentService;
+import com.example.chat.service.EgovDocumentService;
 import com.example.chat.util.DocumentHashUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EnhancedDocumentServiceImpl implements DocumentService {
+public class EgovDocumentServiceImpl extends EgovAbstractServiceImpl implements EgovDocumentService {
 
     @Value("${spring.ai.document.path}")
     private String documentPath;
@@ -45,7 +46,7 @@ public class EnhancedDocumentServiceImpl implements DocumentService {
     private final EgovPdfReader pdfReader;
     private final EgovContentFormatTransformer contentFormatTransformer;
     private final EgovEnhancedDocumentTransformer enhancedDocumentTransformer;
-    private final VectorStoreWriter vectorStoreWriter;
+    private final EgovVectorStoreWriter vectorStoreWriter;
     
     // 직접 Redis 저장을 위한 컴포넌트
     private final RedisVectorStore redisVectorStore;

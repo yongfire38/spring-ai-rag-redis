@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class VectorStoreWriter implements DocumentWriter {
+public class EgovVectorStoreWriter implements DocumentWriter {
 
     private final RedisVectorStore redisVectorStore;
 

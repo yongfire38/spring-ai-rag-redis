@@ -1,10 +1,12 @@
 package com.example.chat.service.impl;
 
-import com.example.chat.config.RedisChatMemoryRepository;
 import com.example.chat.dto.ChatSession;
-import com.example.chat.service.ChatSessionService;
+import com.example.chat.repository.EgovRedisChatMemoryRepository;
+import com.example.chat.service.EgovChatSessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,11 +25,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ChatSessionServiceImpl implements ChatSessionService {
+public class EgovChatSessionServiceImpl extends EgovAbstractServiceImpl implements EgovChatSessionService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ChatMemory chatMemory;
-    private final RedisChatMemoryRepository redisChatMemoryRepository;
+    private final EgovRedisChatMemoryRepository redisChatMemoryRepository;
 
     private static final String SESSIONS_LIST_KEY = "chat:sessions:list";
     private static final String SESSION_INFO_KEY_PREFIX = "chat:session:";

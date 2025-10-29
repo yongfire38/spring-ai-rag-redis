@@ -1,7 +1,9 @@
 package com.example.chat.service.impl;
 
-import com.example.chat.service.OllamaModelService;
+import com.example.chat.service.EgovOllamaModelService;
 import lombok.extern.slf4j.Slf4j;
+
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -11,11 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Ollama 모델 관리 서비스 구현체 (크로스 플랫폼 지원)
+ * Ollama 모델 관리 서비스 구현체
  */
 @Slf4j
 @Service
-public class OllamaModelServiceImpl implements OllamaModelService {
+public class EgovOllamaModelServiceImpl extends EgovAbstractServiceImpl implements EgovOllamaModelService {
 
     @Override
     public List<String> getInstalledModels() {

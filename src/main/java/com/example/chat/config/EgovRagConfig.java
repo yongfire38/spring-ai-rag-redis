@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-public class RagConfig {
+public class EgovRagConfig {
 
     @Value("${rag.prompt.pattern}")
     private String promptPattern;
