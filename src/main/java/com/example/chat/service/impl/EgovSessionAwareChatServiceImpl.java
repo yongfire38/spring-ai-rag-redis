@@ -9,7 +9,6 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.converter.StructuredOutputConverter;
-import org.springframework.ai.rag.Query;
 import org.springframework.stereotype.Service;
 
 import com.example.chat.context.SessionContext;
