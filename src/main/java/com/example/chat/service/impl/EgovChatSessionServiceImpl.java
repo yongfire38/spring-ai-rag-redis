@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -91,7 +93,11 @@ public class EgovChatSessionServiceImpl extends EgovAbstractServiceImpl implemen
 
     @Override
     public List<Message> getSessionMessages(String sessionId) {
-        return chatMemory.get(sessionId);
+        List<Message> all = chatMemory.get(sessionId);
+        // UI에는 사용자/어시스턴트 메시지만 노출 (System 등 내부 메시지는 제외)
+        return all.stream()
+                .filter(m -> (m instanceof UserMessage) || (m instanceof AssistantMessage))
+                .collect(Collectors.toList());
     }
 
     @Override

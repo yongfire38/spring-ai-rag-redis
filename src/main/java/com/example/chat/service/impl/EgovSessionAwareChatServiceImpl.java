@@ -50,20 +50,19 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
             log.debug("세션 {} RAG 응답 생성 시작", sessionId);
             validateSessionId(sessionId);
 
-            // 히스토리 압축 적용 (일반 질의와 동일한 단일처리)
-            String compressedQuery = compressQueryWithHistory(query, sessionId);
+            // 원본 질문으로 ChatClient RequestSpec 생성 (사용자 메시지로 저장)
+            ChatClientRequestSpec requestSpec = createRequestSpec(query, model);
 
-            // 압축된 질문으로 ChatClient RequestSpec 생성
-            ChatClientRequestSpec requestSpec = createRequestSpec(compressedQuery, model);
-
-            // RAG 어드바이저 생성 (QueryTransformer 없이 DocumentRetriever만 사용)
-            log.info("RAG 어드바이저 생성 시작 - 세션: {}, 압축된 질문: '{}'", sessionId, compressedQuery);
-            Advisor ragAdvisor = EgovRagConfig.createRagAdvisor(vectorStoreDocumentRetriever);
+            // RAG 어드바이저 생성 (SessionAwareQueryTransformer 포함 - RAG 검색 시 히스토리 압축 수행)
+            log.info("RAG 어드바이저 생성 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query);
+            Advisor ragAdvisor = EgovRagConfig.createRagAdvisor(sessionId, compressionTransformer, vectorStoreDocumentRetriever);
             log.info("RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
 
-            log.info("RAG 스트리밍 시작 - 세션: {}, 압축된 질문: '{}'", sessionId, compressedQuery);
-            
+            log.info("RAG 스트리밍 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query);
+
             // ChatMemory 어드바이저와 RAG 어드바이저 적용
+            // - MessageChatMemoryAdvisor: 원본 질문을 사용자 메시지로 저장
+            // - RAG Advisor: 내부 QueryTransformer에서 히스토리 압축 후 문서 검색
             return requestSpec
                     .advisors(messageChatMemoryAdvisor, ragAdvisor)
                     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
@@ -87,13 +86,11 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
         try {
             log.debug("세션 {} 일반 응답 생성 시작", sessionId);
 
-            // 히스토리 압축 적용
-            String compressedQuery = compressQueryWithHistory(query, sessionId);
-
-            // 압축된 질문으로 ChatClient RequestSpec 생성
-            ChatClient.ChatClientRequestSpec requestSpec = createRequestSpec(compressedQuery, model);
+            // 원본 질문으로 ChatClient RequestSpec 생성 (RAG 없으므로 압축 불필요)
+            ChatClient.ChatClientRequestSpec requestSpec = createRequestSpec(query, model);
 
             // ChatMemory 어드바이저만 적용 (RAG 없음)
+            // MessageChatMemoryAdvisor가 자동으로 히스토리를 제공하므로 별도 압축 불필요
             return requestSpec
                     .advisors(messageChatMemoryAdvisor)
                     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
@@ -164,24 +161,7 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
         }
     }
 
-    /**
-     * 히스토리 기반 질문 압축
-     *
-     * @param query 원본 질문
-     * @param sessionId 세션 ID
-     * @return 압축된 질문 (압축 실패 시 원본 질문)
-     */
-    private String compressQueryWithHistory(String query, String sessionId) {
-        try {
-            log.info("일반 채팅 히스토리 압축 시작 - 세션 ID: {}, 원본 질문: {}", sessionId, query);
-            Query originalQuery = Query.builder().text(query).build();
-            Query compressedQueryObj = compressionTransformer.transformWithSessionId(originalQuery, sessionId);
-            String compressedQuery = compressedQueryObj.text();
-            log.info("일반 채팅 히스토리 압축 완료 - 원본: '{}' → 압축: '{}'", query, compressedQuery);
-            return compressedQuery;
-        } catch (Exception e) {
-            log.warn("일반 채팅 히스토리 압축 중 오류 발생, 원본 질문 사용: {}", e.getMessage());
-            return query;
-        }
-    }
+    // 주석: compressQueryWithHistory 메서드는 더 이상 사용하지 않음
+    // - RAG 검색의 경우: RAG Advisor 내부의 SessionAwareQueryTransformer에서 압축 수행
+    // - 일반 채팅의 경우: MessageChatMemoryAdvisor가 자동으로 히스토리 제공, 압축 불필요
 }

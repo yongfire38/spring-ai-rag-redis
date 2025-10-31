@@ -6,6 +6,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.preretrieval.query.transformation.CompressionQueryTransformer;
 import org.springframework.lang.NonNull;
@@ -78,40 +79,65 @@ public class EgovCompressionQueryTransformer {
             .text(query.text())
             .history(conversationHistory)
             .build();
-        
-        // Spring AI 기본 CompressionQueryTransformer 사용
+
+        // Spring AI의 CompressionQueryTransformer를 커스텀 프롬프트로 사용
+        // 중요: {history}와 {query} 플레이스홀더는 필수입니다!
+        String customPromptText = """
+            당신은 대화 컨텍스트를 분석하여 후속 질문을 독립적인 질문으로 재작성하는 전문가입니다.
+
+            **중요 규칙:**
+            1. 질문만 생성하고, 절대 답변하지 마세요.
+            2. 예시, 코드, 설명을 포함하지 마세요.
+            3. 짧고 명확한 질문 형태로만 출력하세요.
+
+            대화 히스토리:
+            {history}
+
+            후속 질문:
+            {query}
+
+            위 대화 히스토리를 참고하여 후속 질문을 독립적인 질문으로 재작성하세요.
+            재작성된 질문만 출력하고, 다른 내용은 절대 포함하지 마세요.
+            """;
+
+        // String을 PromptTemplate 객체로 변환
+        PromptTemplate customPromptTemplate = new PromptTemplate(customPromptText);
+
         CompressionQueryTransformer compressionTransformer = CompressionQueryTransformer.builder()
             .chatClientBuilder(chatClient.mutate()
                 .defaultOptions(ChatOptions.builder()
-                    .temperature(0.00) // 공식 문서 권장: 정확한 질문 압축을 위해 낮은 temperature 사용
+                    .temperature(0.0)
                     .build()))
+            .promptTemplate(customPromptTemplate)
             .build();
-        
+
         Query compressedQuery = compressionTransformer.transform(queryWithHistory);
         String compressedText = compressedQuery.text();
-        
-        log.info("압축 전 원본 텍스트: '{}'", compressedText);
-        
-        // <think> 블록 제거
+
+        log.info("압축 후 생성된 질문: '{}'", compressedText);
+
+        // <think> 블록이 포함되어 있다면 제거 (fallback)
         if (compressedText.contains("<think>")) {
-            log.info("<think> 블록 감지됨, 제거 시작");
-            // <think> 블록 이후의 실제 질문만 추출
+            log.warn("<think> 블록이 여전히 포함되어 있음, 제거 처리");
             String[] parts = compressedText.split("</think>");
             if (parts.length > 1) {
                 compressedText = parts[1].trim();
                 log.info("</think> 이후 텍스트 추출: '{}'", compressedText);
             } else {
-                // </think>가 없는 경우 <think> 이후 부분만 추출
                 int thinkIndex = compressedText.indexOf("<think>");
                 if (thinkIndex != -1) {
                     compressedText = compressedText.substring(thinkIndex + 7).trim();
                     log.info("<think> 이후 텍스트 추출: '{}'", compressedText);
                 }
             }
-        } else {
-            log.info("<think> 블록 없음, 원본 텍스트 사용: '{}'", compressedText);
         }
-        
+
+        // 답변이 아닌 질문인지 검증
+        if (isLikelyAnswer(compressedText)) {
+            log.warn("생성된 텍스트가 답변처럼 보임, 원본 질문 사용: '{}'", originalQuery);
+            compressedText = originalQuery;
+        }
+
         log.info("최종 압축된 질문: '{}'", compressedText);
 
         // 정리된 텍스트로 Query 재생성
@@ -125,6 +151,35 @@ public class EgovCompressionQueryTransformer {
     }
     
     /**
+     * 생성된 텍스트가 답변처럼 보이는지 확인
+     * 코드 블록, 예시 패턴 등이 포함되어 있으면 답변으로 판단
+     */
+    private boolean isLikelyAnswer(String text) {
+        if (text == null) {
+            return false;
+        }
+
+        // 코드 블록이 포함되어 있으면 답변일 가능성이 높음
+        if (text.contains("```") || text.contains("function") || text.contains("const ") ||
+            text.contains("return ") || text.contains("class ")) {
+            return true;
+        }
+
+        // "예시:", "다음과 같습니다:", "설명:" 등의 패턴이 있으면 답변일 가능성이 높음
+        if (text.matches(".*예시[는은:].*") || text.contains("다음과 같습니다") ||
+            text.contains("설명:") || text.contains("코드는")) {
+            return true;
+        }
+
+        // 매우 긴 텍스트 (200자 이상)는 답변일 가능성이 높음
+        if (text.length() > 200) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * 질문이 불완전한지 확인
      * 너무 짧거나, 맥락이 필요한 질문인지 판단
      */
@@ -132,18 +187,18 @@ public class EgovCompressionQueryTransformer {
         if (query == null || query.trim().length() < 5) {
             return true;
         }
-        
+
         // 매우 짧은 질문만 불완전으로 판단
         String[] words = query.trim().split("\\s+");
         if (words.length < 2) {
             return true;
         }
-        
+
         // 단일 단어나 매우 짧은 질문만 불완전으로 판단
         if (query.trim().length() < 5) {
             return true;
         }
-        
+
         return false;
     }
 }
