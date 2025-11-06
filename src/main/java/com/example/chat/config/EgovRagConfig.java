@@ -2,9 +2,11 @@ package com.example.chat.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransformer;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
@@ -15,6 +17,8 @@ import org.springframework.context.annotation.Configuration;
 import com.example.chat.config.rag.transformers.EgovCompressionQueryTransformer;
 
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @Slf4j
 @Configuration
@@ -67,11 +71,14 @@ public class EgovRagConfig {
             compressionTransformer, sessionId);
         log.info("SessionAwareQueryTransformer 생성 완료");
 
+        // 로깅을 위해 DocumentRetriever를 래핑
+        LoggingDocumentRetriever loggingRetriever = new LoggingDocumentRetriever(documentRetriever);
+
         // QueryTransformer와 DocumentRetriever를 함께 사용
         // 흐름: Query → QueryTransformer(히스토리 압축) → DocumentRetriever(벡터 검색)
         RetrievalAugmentationAdvisor advisor = RetrievalAugmentationAdvisor.builder()
                 .queryTransformers(sessionAwareTransformer)
-                .documentRetriever(documentRetriever)
+                .documentRetriever(loggingRetriever)
                 .build();
 
         log.info("RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
@@ -120,6 +127,52 @@ public class EgovRagConfig {
             log.info("SessionAwareQueryTransformer 완료 - 압축된 질문: '{}'", compressedQuery.text());
 
             return compressedQuery;
+        }
+    }
+
+    /**
+     * DocumentRetriever를 래핑하여 검색된 문서를 로깅하는 클래스
+     */
+    private static class LoggingDocumentRetriever implements DocumentRetriever {
+
+        private final DocumentRetriever delegate;
+
+        public LoggingDocumentRetriever(DocumentRetriever delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public List<Document> retrieve(Query query) {
+            log.info("RAG 문서 검색 시작 - 질문: '{}'", query.text());
+
+            List<Document> documents = delegate.retrieve(query);
+
+            if (documents.isEmpty()) {
+                log.warn("RAG 문서 검색 완료 - 검색된 문서 없음 (유사도 임계값 미달 또는 관련 문서 없음)");
+                log.warn("→ LLM이 RAG 문서 없이 일반 지식으로만 답변합니다");
+            } else {
+                log.info("RAG 문서 검색 완료 - 검색된 문서 수: {} (모두 LLM 컨텍스트에 포함)", documents.size());
+
+                int totalChars = 0;
+                for (int i = 0; i < documents.size(); i++) {
+                    Document doc = documents.get(i);
+                    String content = doc.getText();
+                    String preview = content.length() > 100 ? content.substring(0, 100) + "..." : content;
+                    totalChars += content.length();
+
+                    // 유사도 점수 로깅 (메타데이터에서 추출)
+                    Object similarityScore = doc.getMetadata().get("distance");
+                    if (similarityScore == null) {
+                        similarityScore = doc.getMetadata().get("score");
+                    }
+
+                    log.info("  문서 #{}: 유사도={}, 길이={}자, 내용={}", i + 1, similarityScore, content.length(), preview);
+                }
+
+                log.info("→ 총 {}자의 컨텍스트가 LLM에 전달됩니다", totalChars);
+            }
+
+            return documents;
         }
     }
 }
