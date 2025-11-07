@@ -23,9 +23,6 @@ import java.util.List;
 @Slf4j
 @Configuration
 public class EgovRagConfig {
-
-    @Value("${rag.prompt.pattern}")
-    private String promptPattern;
     
     @Value("${rag.similarity.threshold}")
     private double similarityThreshold;
@@ -59,30 +56,47 @@ public class EgovRagConfig {
      * @param sessionId 세션 ID
      * @param compressionTransformer 히스토리 압축 transformer
      * @param documentRetriever Bean으로 생성된 DocumentRetriever (application.properties의 rag.similarity.threshold 적용)
+     * @param enableQueryCompression 질문 압축 활성화 여부
      */
     public static Advisor createRagAdvisor(String sessionId,
                                          EgovCompressionQueryTransformer compressionTransformer,
-                                         VectorStoreDocumentRetriever documentRetriever) {
-        log.info("RAG 어드바이저 생성 시작 - 세션: {}", sessionId);
-
-        // 세션 ID를 전달받는 커스텀 QueryTransformer 생성
-        // 이 transformer는 내부에서 ChatMemory를 조회하여 히스토리 기반 질문 압축 수행
-        SessionAwareQueryTransformer sessionAwareTransformer = new SessionAwareQueryTransformer(
-            compressionTransformer, sessionId);
-        log.info("SessionAwareQueryTransformer 생성 완료");
+                                         VectorStoreDocumentRetriever documentRetriever,
+                                         boolean enableQueryCompression) {
+        log.info("RAG 어드바이저 생성 시작 - 세션: {}, 질문 압축: {}", sessionId, enableQueryCompression);
 
         // 로깅을 위해 DocumentRetriever를 래핑
         LoggingDocumentRetriever loggingRetriever = new LoggingDocumentRetriever(documentRetriever);
 
-        // QueryTransformer와 DocumentRetriever를 함께 사용
-        // 흐름: Query → QueryTransformer(히스토리 압축) → DocumentRetriever(벡터 검색)
-        RetrievalAugmentationAdvisor advisor = RetrievalAugmentationAdvisor.builder()
-                .queryTransformers(sessionAwareTransformer)
-                .documentRetriever(loggingRetriever)
-                .build();
+        if (enableQueryCompression) {
+            // 질문 압축 활성화: QueryTransformer 사용
+            // 세션 ID를 전달받는 커스텀 QueryTransformer 생성
+            // 이 transformer는 내부에서 ChatMemory를 조회하여 히스토리 기반 질문 압축 수행
+            SessionAwareQueryTransformer sessionAwareTransformer = new SessionAwareQueryTransformer(
+                compressionTransformer, sessionId);
+            log.info("질문 압축 활성화 - SessionAwareQueryTransformer 사용");
 
-        log.info("RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
-        return advisor;
+            // QueryTransformer와 DocumentRetriever를 함께 사용
+            // 흐름: Query → QueryTransformer(히스토리 압축) → DocumentRetriever(벡터 검색)
+            RetrievalAugmentationAdvisor advisor = RetrievalAugmentationAdvisor.builder()
+                    .queryTransformers(sessionAwareTransformer)
+                    .documentRetriever(loggingRetriever)
+                    .build();
+
+            log.info("RAG 어드바이저 생성 완료 - 세션: {}, 압축 모드", sessionId);
+            return advisor;
+        } else {
+            // 질문 압축 비활성화: DocumentRetriever만 사용
+            log.info("질문 압축 비활성화 - 원본 질문으로 검색");
+
+            // QueryTransformer 없이 DocumentRetriever만 사용
+            // 흐름: Query → DocumentRetriever(벡터 검색)
+            RetrievalAugmentationAdvisor advisor = RetrievalAugmentationAdvisor.builder()
+                    .documentRetriever(loggingRetriever)
+                    .build();
+
+            log.info("RAG 어드바이저 생성 완료 - 세션: {}, 비압축 모드", sessionId);
+            return advisor;
+        }
     }
 
     /**

@@ -81,7 +81,7 @@ public class EgovCompressionQueryTransformer {
             .build();
 
         // Spring AI의 CompressionQueryTransformer를 커스텀 프롬프트로 사용
-        // 중요: {history}와 {query} 플레이스홀더는 필수입니다!
+        // 중요: {history}와 {query} 플레이스홀더는 필수설정값
         String customPromptText = """
             당신은 대화 컨텍스트를 분석하여 후속 질문을 독립적인 질문으로 재작성하는 전문가입니다.
 

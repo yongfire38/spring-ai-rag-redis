@@ -9,6 +9,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.converter.StructuredOutputConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.example.chat.context.SessionContext;
@@ -32,6 +33,9 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
     private final MessageChatMemoryAdvisor messageChatMemoryAdvisor;
     private final EgovCompressionQueryTransformer compressionTransformer;
     private final VectorStoreDocumentRetriever vectorStoreDocumentRetriever;
+
+    @Value("${rag.enable-query-compression:true}")
+    private boolean enableQueryCompression;
     
     // StructuredOutputConverter 인스턴스들 (<think> 태그 처리)
     private final StructuredOutputConverter<TechnologyResponse> technologyOutputConverter = 
@@ -52,9 +56,9 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
             // 원본 질문으로 ChatClient RequestSpec 생성 (사용자 메시지로 저장)
             ChatClientRequestSpec requestSpec = createRequestSpec(query, model);
 
-            // RAG 어드바이저 생성 (SessionAwareQueryTransformer 포함 - RAG 검색 시 히스토리 압축 수행)
-            log.info("RAG 어드바이저 생성 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query);
-            Advisor ragAdvisor = EgovRagConfig.createRagAdvisor(sessionId, compressionTransformer, vectorStoreDocumentRetriever);
+            // RAG 어드바이저 생성 (질문 압축 설정값에 따라 동작 결정)
+            log.info("RAG 어드바이저 생성 시작 - 세션: {}, 원본 질문: '{}', 질문 압축: {}", sessionId, query, enableQueryCompression);
+            Advisor ragAdvisor = EgovRagConfig.createRagAdvisor(sessionId, compressionTransformer, vectorStoreDocumentRetriever, enableQueryCompression);
             log.info("RAG 어드바이저 생성 완료 - 세션: {}", sessionId);
 
             log.info("RAG 스트리밍 시작 - 세션: {}, 원본 질문: '{}'", sessionId, query);
@@ -159,8 +163,4 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
             log.warn("세션 ID가 'default'로 설정됨 - 세션 관리에 문제가 있을 수 있습니다");
         }
     }
-
-    // 주석: compressQueryWithHistory 메서드는 더 이상 사용하지 않음
-    // - RAG 검색의 경우: RAG Advisor 내부의 SessionAwareQueryTransformer에서 압축 수행
-    // - 일반 채팅의 경우: MessageChatMemoryAdvisor가 자동으로 히스토리 제공, 압축 불필요
 }
