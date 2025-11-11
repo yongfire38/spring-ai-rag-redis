@@ -8,7 +8,7 @@ import java.util.List;
  * Spring AI 프롬프트 엔지니어링 패턴을 위한 유틸리티 클래스
  * OpenAI의 프롬프트 엔지니어링 베스트 프랙티스를 반영하여 최적화된 프롬프트를 제공합니다.
  */
-public class PromptEngineeringUtil {
+public class EgovPromptEngineeringUtil {
 
     /**
      * Zero-shot 패턴을 위한 시스템 프롬프트 생성
@@ -321,21 +321,6 @@ public class PromptEngineeringUtil {
                 - Do not output any template, format, section titles, or example. Only provide your answer.
                 - Your answer must be in Korean.
                 """.formatted(role, task, role);
-    }
-
-    /**
-     * 프롬프트 템플릿에 변수 치환
-     * 
-     * @param template  프롬프트 템플릿
-     * @param variables 치환할 변수들
-     * @return 치환된 프롬프트
-     */
-    public static String formatPrompt(String template, Map<String, String> variables) {
-        String result = template;
-        for (Map.Entry<String, String> entry : variables.entrySet()) {
-            result = result.replace("{" + entry.getKey() + "}", entry.getValue());
-        }
-        return result;
     }
 
     /**

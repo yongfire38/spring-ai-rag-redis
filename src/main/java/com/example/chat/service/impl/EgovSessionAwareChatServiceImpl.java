@@ -18,7 +18,7 @@ import com.example.chat.config.rag.transformers.EgovCompressionQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import com.example.chat.response.TechnologyResponse;
 import com.example.chat.service.EgovSessionAwareChatService;
-import com.example.chat.util.ThinkTagOutputConverter;
+import com.example.chat.util.EgovThinkTagOutputConverter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ public class EgovSessionAwareChatServiceImpl extends EgovAbstractServiceImpl imp
     
     // StructuredOutputConverter 인스턴스들 (<think> 태그 처리)
     private final StructuredOutputConverter<TechnologyResponse> technologyOutputConverter = 
-        ThinkTagOutputConverter.of(TechnologyResponse.class);
+        EgovThinkTagOutputConverter.of(TechnologyResponse.class);
 
     /**
      * 세션별 RAG 기반 스트리밍 응답 생성

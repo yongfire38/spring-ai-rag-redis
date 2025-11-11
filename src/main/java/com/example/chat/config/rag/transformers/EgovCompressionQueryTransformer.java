@@ -83,23 +83,44 @@ public class EgovCompressionQueryTransformer {
         // Spring AI의 CompressionQueryTransformer를 커스텀 프롬프트로 사용
         // 중요: {history}와 {query} 플레이스홀더는 필수설정값
         String customPromptText = """
-            당신은 대화 컨텍스트를 분석하여 후속 질문을 독립적인 질문으로 재작성하는 전문가입니다.
+            You are a query rewriting assistant. Your ONLY job is to rewrite follow-up questions into standalone questions using conversation history.
 
-            **중요 규칙:**
-            1. 질문만 생성하고, 절대 답변하지 마세요.
-            2. 예시, 코드, 설명을 포함하지 마세요.
-            3. 짧고 명확한 질문 형태로만 출력하세요.
-            4. 원본 질문의 언어를 유지하세요 (한국어 질문 → 한국어 출력, 영어 질문 → 영어 출력).
+            STRICT RULES:
+            - Output ONLY the rewritten question
+            - NO explanations, NO thinking process, NO examples
+            - DO NOT use <think> tags or any XML tags
+            - Keep the SAME language as the original question (Korean → Korean, English → English)
+            - Replace pronouns and references with specific terms from history
 
-            대화 히스토리:
+            EXAMPLES:
+
+            History:
+            User: React의 주요 기능 3가지는?
+            Assistant: 1. 컴포넌트 기반 2. Virtual DOM 3. 단방향 데이터 흐름
+
+            Follow-up: 두 번째 기능을 설명해줘
+            Rewritten: React의 Virtual DOM 기능을 설명해줘
+
+            ---
+
+            History:
+            User: 전자정부 실행환경에서 aop를 처리하는 방법에 대하여 알려 줘
+            Assistant: [AOP 처리 방법 설명... 1. 프레임워크 지원 2. 설정 방법 3. Pointcut 표현식]
+
+            Follow-up: 세 번째 사항의 예시를 알려 줘
+            Rewritten: 전자정부 실행환경 AOP의 Pointcut 표현식 예시를 알려 줘
+
+            ---
+
+            NOW REWRITE THIS:
+
+            Conversation History:
             {history}
 
-            후속 질문:
+            Follow-up Question:
             {query}
 
-            위 대화 히스토리를 참고하여 후속 질문을 독립적인 질문으로 재작성하세요.
-            재작성된 질문만 출력하고, 다른 내용은 절대 포함하지 마세요.
-            """;
+            Rewritten Question:""";
 
         // String을 PromptTemplate 객체로 변환
         PromptTemplate customPromptTemplate = new PromptTemplate(customPromptText);

@@ -9,11 +9,11 @@ import org.springframework.ai.converter.StructuredOutputConverter;
  * 추론 모델의 <think> 태그를 처리하는 커스텀 StructuredOutputConverter
  */
 @Slf4j
-public class ThinkTagOutputConverter<T> implements StructuredOutputConverter<T> {
+public class EgovThinkTagOutputConverter<T> implements StructuredOutputConverter<T> {
     
     private final BeanOutputConverter<T> delegate;
 
-    public ThinkTagOutputConverter(Class<T> targetClass) {
+    public EgovThinkTagOutputConverter(Class<T> targetClass) {
         this.delegate = new BeanOutputConverter<>(targetClass);
     }
 
@@ -21,7 +21,7 @@ public class ThinkTagOutputConverter<T> implements StructuredOutputConverter<T> 
     public T convert(String text) {
         try {
             // 1. <think> 태그 제거 및 JSON 추출
-            String cleanedJson = ResponseCleanerUtil.cleanResponse(text);
+            String cleanedJson = EgovResponseCleanerUtil.cleanResponse(text);
             
             log.debug("원본 응답: {}", text);
             log.debug("정리된 JSON: {}", cleanedJson);
@@ -46,7 +46,7 @@ public class ThinkTagOutputConverter<T> implements StructuredOutputConverter<T> 
      * @param targetClass 대상 클래스
      * @return ThinkTagAwareOutputConverter 인스턴스
      */
-    public static <T> ThinkTagOutputConverter<T> of(Class<T> targetClass) {
-        return new ThinkTagOutputConverter<>(targetClass);
+    public static <T> EgovThinkTagOutputConverter<T> of(Class<T> targetClass) {
+        return new EgovThinkTagOutputConverter<>(targetClass);
     }
 }

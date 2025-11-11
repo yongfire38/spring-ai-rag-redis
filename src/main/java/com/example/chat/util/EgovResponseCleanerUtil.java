@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 /**
  * AI 모델 응답에서 마크업 태그를 제거하는 유틸리티 클래스
  */
-public class ResponseCleanerUtil {
+public class EgovResponseCleanerUtil {
 
     // <think> 태그와 그 내용을 제거하는 정규식
     private static final Pattern THINK_TAG_PATTERN = Pattern.compile(

@@ -3,7 +3,7 @@ package com.example.chat.util;
 /**
  * JSON 구조화된 출력을 위한 프롬프트 템플릿 클래스
  */
-public class JsonPromptTemplates {
+public class EgovJsonPromptTemplates {
   
     /**
      * 기술 정보를 위한 JSON 프롬프트

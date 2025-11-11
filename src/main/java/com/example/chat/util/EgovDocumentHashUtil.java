@@ -7,7 +7,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 /**
  * 문서 해시 계산을 위한 유틸리티 클래스
  */
-public class DocumentHashUtil {
+public class EgovDocumentHashUtil {
 
     /**
      * 문서 내용의 MD5 해시를 계산

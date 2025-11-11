@@ -28,7 +28,7 @@ import com.example.chat.config.etl.transformers.EgovContentFormatTransformer;
 import com.example.chat.config.etl.writers.EgovVectorStoreWriter;
 import com.example.chat.response.DocumentStatusResponse;
 import com.example.chat.service.EgovDocumentService;
-import com.example.chat.util.DocumentHashUtil;
+import com.example.chat.util.EgovDocumentHashUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -272,7 +272,7 @@ public class EgovDocumentServiceImpl extends EgovAbstractServiceImpl implements 
         }
 
         // 문서 내용의 해시 계산
-        String newHash = DocumentHashUtil.calculateHash(content);
+        String newHash = EgovDocumentHashUtil.calculateHash(content);
 
         // Redis에서 기존 해시 조회
         String redisKey = "docmeta:" + docId;
@@ -296,7 +296,7 @@ public class EgovDocumentServiceImpl extends EgovAbstractServiceImpl implements 
         String content = document.getText();
 
         if (content != null && !content.trim().isEmpty()) {
-            String newHash = DocumentHashUtil.calculateHash(content);
+            String newHash = EgovDocumentHashUtil.calculateHash(content);
             String redisKey = "docmeta:" + docId;
             stringRedisTemplate.opsForValue().set(redisKey, newHash);
             log.debug("문서 '{}' 해시 저장 완료: {}", docId, newHash);
