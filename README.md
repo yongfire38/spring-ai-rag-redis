@@ -6,7 +6,7 @@
 | :--------- | :------ |
 | java | 17 이상 |
 | maven | 3.8.4 |
-| spring boot | 3.5.0 |
+| spring boot | 3.5.6 |
 | Spring AI | 1.0.1 |
 
 ## 사용 기술
@@ -21,7 +21,7 @@
 
 1. [Ollama](https://ollama.com/download) 설치 및 사용할 LLM 모델을 설치한다. 폐쇄망의 경우에는 `폐쇄망에서의 Ollama 설치` 항목을 참고한다.
 2. 기본적인 임베딩 모델은 `\src\main\resources\model` 내에 설정하여 주도록 한다. 설정 방법은 `Onnx 모델 익스포트`, `사용 모델 소개` 항목을 참고한다.
-3. Redis Stack에 인덱싱 될 문서의 경로는 `application.properties`의 `spring.ai.document.path` 및 `spring.ai.document.pdf-path` 속성에 설정되어 있으므로 확인 후 환경에 맞추어 변경하도록 한다.
+3. Redis Stack에 인덱싱 될 문서의 경로는 `application.yml`의 `spring.ai.document.path` 및 `spring.ai.document.pdf-path` 속성에 설정되어 있으므로 확인 후 환경에 맞추어 변경하도록 한다.
 4. `docker-compose.yml` 을 사용해 `docker compose up -d`로 docker container 기반의 Redis 설정을 해 둔다. Redis Insight의 기본 포트는 `8001`이다.
 
 ## 폐쇄망에서의 Ollama
@@ -88,7 +88,7 @@ optimum-cli export onnx -m jhgan/ko-sroberta-multitask .
 ## 문서 인덱싱
 
 - 현재 인덱싱 가능한 문서의 종류는 마크다운 파일과 PDF 파일로 구성되어 있다.
-- `application.properties` 의 `spring.ai.document.path` 및 `spring.ai.document.pdf-path` 에서 확인 가능하다.
+- `application.yml` 의 `spring.ai.document.path` 및 `spring.ai.document.pdf-path` 에서 확인 가능하다.
 
 ## 실행
 

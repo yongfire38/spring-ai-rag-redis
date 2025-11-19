@@ -55,7 +55,7 @@ public class EgovRagConfig {
      *
      * @param sessionId 세션 ID
      * @param compressionTransformer 히스토리 압축 transformer
-     * @param documentRetriever Bean으로 생성된 DocumentRetriever (application.properties의 rag.similarity.threshold 적용)
+     * @param documentRetriever Bean으로 생성된 DocumentRetriever (application.yml의 rag.similarity.threshold 적용)
      * @param enableQueryCompression 질문 압축 활성화 여부
      */
     public static Advisor createRagAdvisor(String sessionId,

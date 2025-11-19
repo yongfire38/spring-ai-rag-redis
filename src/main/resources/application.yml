@@ -116,3 +116,9 @@ rag:
   # RAG 검색 결과 개수 (Top K)
   top-k: 3
 
+# 채팅 메모리 설정 (기본값: 20)
+chat:
+  memory:
+    max-messages: 20
+
+
